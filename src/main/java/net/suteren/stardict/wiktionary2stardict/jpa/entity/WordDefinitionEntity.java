@@ -17,7 +17,8 @@ import lombok.Setter;
 @Getter @Setter
 @Entity public class WordDefinitionEntity {
 
-	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(nullable = false)
 	@Id private UUID id;
 
 	@Column private String source;

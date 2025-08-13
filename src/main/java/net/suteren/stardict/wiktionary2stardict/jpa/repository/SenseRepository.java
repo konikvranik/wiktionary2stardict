@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.SenseEntity;
 
-@Repository public interface SenseRepository extends JpaRepository<UUID, SenseEntity> {
+@Repository public interface SenseRepository extends JpaRepository<SenseEntity, UUID> {
 }

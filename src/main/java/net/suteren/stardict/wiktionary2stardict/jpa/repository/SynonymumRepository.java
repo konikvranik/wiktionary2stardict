@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.SynonymumEntity;
 
-@Repository public interface SynonymumRepository extends JpaRepository<UUID, SynonymumEntity> {
+@Repository public interface SynonymumRepository extends JpaRepository<SynonymumEntity, UUID> {
 }
