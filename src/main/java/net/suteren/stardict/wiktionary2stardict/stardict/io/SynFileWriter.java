@@ -11,25 +11,25 @@ import java.util.List;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
 
 /**
- * Třída pro zápis StarDict .syn souborů
+ * Class for writing StarDict .syn files
  */
 public class SynFileWriter {
 
     /**
-     * Zapíše synonyma do .syn souboru
-     * @param filename Cesta k .syn souboru
-     * @param entries Seznam záznamů synonym
-     * @throws IOException Při chybě zápisu souboru
+     * Writes synonyms to a .syn file
+     * @param filename Path to the .syn file
+     * @param entries List of synonym records
+     * @throws IOException When a file writing error occurs
      */
     public static void writeSynFile(String filename, List<SynonymumEntry> entries) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(filename);
              FileChannel channel = fos.getChannel()) {
 
             for (SynonymumEntry entry : entries) {
-                // Převedeme záznam na pole bytů
+                // Convert the record to a byte array
                 byte[] entryBytes = entryToBytes(entry);
                 
-                // Zapíšeme záznam do souboru
+                // Write the record to the file
                 ByteBuffer buffer = ByteBuffer.wrap(entryBytes);
                 channel.write(buffer);
             }
@@ -37,9 +37,9 @@ public class SynFileWriter {
     }
     
     /**
-     * Převede záznam synonyma na pole bytů
-     * @param entry Záznam synonyma
-     * @return Pole bytů reprezentující záznam
+     * Converts a synonym record to a byte array
+     * @param entry Synonym record
+     * @return Byte array representing the record
      */
     private static byte[] entryToBytes(SynonymumEntry entry) {
         byte[] wordBytes = entry.word().getBytes(StandardCharsets.UTF_8);

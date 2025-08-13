@@ -12,17 +12,17 @@ import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
 
 /**
- * Třída pro čtení StarDict .dict souborů
+ * Class for reading StarDict .dict files
  */
 public class DictFileReader {
 
     /**
-     * Načte definice slov z .dict souboru podle záznamů v .idx souboru
-     * @param dictFilename Cesta k .dict souboru
-     * @param idxEntries Seznam záznamů z .idx souboru
-     * @param sameTypeSequence Hodnota sameTypeSequence z .ifo souboru (může být null)
-     * @return Mapa slov a jejich definic
-     * @throws IOException Při chybě čtení souboru
+     * Loads word definitions from a .dict file according to records in the .idx file
+     * @param dictFilename Path to the .dict file
+     * @param idxEntries List of records from the .idx file
+     * @param sameTypeSequence The sameTypeSequence value from the .ifo file (can be null)
+     * @return Map of words and their definitions
+     * @throws IOException When a file reading error occurs
      */
     public static Map<String, WordDefinition> readDictFile(String dictFilename, List<IdxEntry> idxEntries, String sameTypeSequence) throws IOException {
         Map<String, WordDefinition> definitions = new HashMap<>();
@@ -35,10 +35,10 @@ public class DictFileReader {
             buffer.flip();
 
             for (IdxEntry entry : idxEntries) {
-                // Nastavíme pozici v bufferu podle offsetu v idx záznamu
+                // Set the position in the buffer according to the offset in the idx record
                 buffer.position(entry.offset());
                 
-                // Načteme definici slova
+                // Load the word definition
                 WordDefinition wordDef = WordDefinition.fromBytes(buffer, entry.size(), sameTypeSequence);
                 wordDef.setWord(entry.word());
                 
@@ -50,28 +50,28 @@ public class DictFileReader {
     }
     
     /**
-     * Načte definici konkrétního slova z .dict souboru
-     * @param dictFilename Cesta k .dict souboru
-     * @param entry Záznam z .idx souboru
-     * @param sameTypeSequence Hodnota sameTypeSequence z .ifo souboru (může být null)
-     * @return Definice slova
-     * @throws IOException Při chybě čtení souboru
+     * Loads the definition of a specific word from a .dict file
+     * @param dictFilename Path to the .dict file
+     * @param entry Record from the .idx file
+     * @param sameTypeSequence The sameTypeSequence value from the .ifo file (can be null)
+     * @return Word definition
+     * @throws IOException When a file reading error occurs
      */
     public static WordDefinition readWordDefinition(String dictFilename, IdxEntry entry, String sameTypeSequence) throws IOException {
         try (FileInputStream fis = new FileInputStream(dictFilename);
              FileChannel channel = fis.getChannel()) {
 
-            // Alokujeme buffer pouze pro velikost definice slova
+            // Allocate buffer only for the size of the word definition
             ByteBuffer buffer = ByteBuffer.allocate(entry.size());
             
-            // Nastavíme pozici v souboru podle offsetu v idx záznamu
+            // Set the position in the file according to the offset in the idx record
             channel.position(entry.offset());
             
-            // Načteme data do bufferu
+            // Load data into the buffer
             channel.read(buffer);
             buffer.flip();
             
-            // Vytvoříme definici slova
+            // Create the word definition
             WordDefinition wordDef = WordDefinition.fromBytes(buffer, entry.size(), sameTypeSequence);
             wordDef.setWord(entry.word());
             

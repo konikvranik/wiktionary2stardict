@@ -5,13 +5,13 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Utility třída pro I/O operace se StarDict soubory
+ * Utility class for I/O operations with StarDict files
  */
 public class StardictIoUtil {
 
 	/**
-	 * Převede 32-bit integer do network byte order (big-endian)
-	 * Ekvivalent g_htonl() z C
+	 * Converts a 32-bit integer to network byte order (big-endian)
+	 * Equivalent to g_htonl() from C
 	 */
 	public static byte[] intToNetworkBytes(int value) {
 		return ByteBuffer.allocate(4)
@@ -21,8 +21,8 @@ public class StardictIoUtil {
 	}
 
 	/**
-	 * Načte 32-bit integer z network byte order (big-endian)
-	 * Ekvivalent g_ntohl() z C
+	 * Reads a 32-bit integer from network byte order (big-endian)
+	 * Equivalent to g_ntohl() from C
 	 */
 	public static int networkBytesToInt(byte[] bytes) {
 		if (bytes.length != 4) {
@@ -34,23 +34,23 @@ public class StardictIoUtil {
 	}
 
 	/**
-	 * Převede string do UTF-8 bytů
+	 * Converts a string to UTF-8 bytes
 	 */
 	public static byte[] stringToUtf8Bytes(String str) {
 		return str.getBytes(StandardCharsets.UTF_8);
 	}
 
 	/**
-	 * Načte UTF-8 string z bytů
+	 * Reads a UTF-8 string from bytes
 	 */
 	public static String utf8BytesToString(byte[] bytes) {
 		return new String(bytes, StandardCharsets.UTF_8);
 	}
 	
 	/**
-	 * Načte null-terminated UTF-8 string z ByteBuffer
-	 * @param buffer ByteBuffer obsahující data
-	 * @return Načtený string
+	 * Reads a null-terminated UTF-8 string from ByteBuffer
+	 * @param buffer ByteBuffer containing data
+	 * @return The read string
 	 */
 	public static String readNullTerminatedUtf8String(ByteBuffer buffer) {
 		StringBuilder sb = new StringBuilder();
@@ -62,9 +62,9 @@ public class StardictIoUtil {
 	}
 	
 	/**
-	 * Zapíše null-terminated UTF-8 string do ByteBuffer
-	 * @param buffer ByteBuffer pro zápis
-	 * @param str String k zapsání
+	 * Writes a null-terminated UTF-8 string to ByteBuffer
+	 * @param buffer ByteBuffer for writing
+	 * @param str String to write
 	 */
 	public static void writeNullTerminatedUtf8String(ByteBuffer buffer, String str) {
 		byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
@@ -73,9 +73,9 @@ public class StardictIoUtil {
 	}
 	
 	/**
-	 * Vytvoří ByteBuffer s null-terminated UTF-8 stringem
-	 * @param str String k zapsání
-	 * @return ByteBuffer obsahující string a null terminator
+	 * Creates a ByteBuffer with a null-terminated UTF-8 string
+	 * @param str String to write
+	 * @return ByteBuffer containing the string and null terminator
 	 */
 	public static ByteBuffer createNullTerminatedUtf8StringBuffer(String str) {
 		byte[] bytes = str.getBytes(StandardCharsets.UTF_8);

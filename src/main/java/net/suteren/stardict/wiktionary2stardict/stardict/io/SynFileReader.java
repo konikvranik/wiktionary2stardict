@@ -12,15 +12,15 @@ import java.util.List;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
 
 /**
- * Třída pro čtení StarDict .syn souborů
+ * Class for reading StarDict .syn files
  */
 public class SynFileReader {
 
     /**
-     * Načte synonyma z .syn souboru
-     * @param filename Cesta k .syn souboru
-     * @return Seznam záznamů synonym
-     * @throws IOException Při chybě čtení souboru
+     * Loads synonyms from a .syn file
+     * @param filename Path to the .syn file
+     * @return List of synonym records
+     * @throws IOException When a file reading error occurs
      */
     public static List<SynonymumEntry> readSynFile(String filename) throws IOException {
         List<SynonymumEntry> entries = new ArrayList<>();
@@ -34,7 +34,7 @@ public class SynFileReader {
             buffer.flip();
 
             while (buffer.hasRemaining()) {
-                // Načtení UTF-8 string až do null terminátoru
+                // Reading UTF-8 string up to the null terminator
                 StringBuilder wordBuilder = new StringBuilder();
                 byte b;
                 while ((b = buffer.get()) != 0) {
@@ -42,7 +42,7 @@ public class SynFileReader {
                 }
                 String word = new String(wordBuilder.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
 
-                // Načtení indexu původního slova (32-bit číslo v network byte order)
+                // Reading the index of the original word (32-bit number in network byte order)
                 int originalWordIndex = buffer.getInt();
 
                 entries.add(new SynonymumEntry(word, originalWordIndex));

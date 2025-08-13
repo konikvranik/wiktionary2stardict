@@ -1,4 +1,4 @@
-package net.suteren.stardict.wiktionary2stardict.stardict.io;
+package net.suteren.stardict.wiktionary2stardict;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +11,12 @@ import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileReader;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileWriter;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.IdxFileReader;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.IdxFileWriter;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileReader;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 
 /**
  * Testovací třída pro ověření implementace čtení a zápisu StarDict souborů

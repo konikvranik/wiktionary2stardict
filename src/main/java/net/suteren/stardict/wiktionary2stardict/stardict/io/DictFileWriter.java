@@ -12,17 +12,17 @@ import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
 
 /**
- * Třída pro zápis StarDict .dict souborů
+ * Class for writing StarDict .dict files
  */
 public class DictFileWriter {
 
     /**
-     * Zapíše definice slov do .dict souboru a vytvoří záznamy pro .idx soubor
-     * @param dictFilename Cesta k .dict souboru
-     * @param definitions Mapa slov a jejich definic
-     * @param sameTypeSequence Hodnota sameTypeSequence pro .ifo soubor (může být null)
-     * @return Seznam záznamů pro .idx soubor
-     * @throws IOException Při chybě zápisu souboru
+     * Writes word definitions to a .dict file and creates records for the .idx file
+     * @param dictFilename Path to the .dict file
+     * @param definitions Map of words and their definitions
+     * @param sameTypeSequence The sameTypeSequence value for the .ifo file (can be null)
+     * @return List of records for the .idx file
+     * @throws IOException When a file writing error occurs
      */
     public static List<IdxEntry> writeDictFile(String dictFilename, Map<String, WordDefinition> definitions, String sameTypeSequence) throws IOException {
         List<IdxEntry> idxEntries = new ArrayList<>();
@@ -36,18 +36,18 @@ public class DictFileWriter {
                 String word = entry.getKey();
                 WordDefinition wordDef = entry.getValue();
                 
-                // Převedeme definici na pole bytů
+                // Convert the definition to a byte array
                 byte[] definitionBytes = wordDef.toBytes(sameTypeSequence);
                 
-                // Zapíšeme definici do souboru
+                // Write the definition to the file
                 ByteBuffer buffer = ByteBuffer.wrap(definitionBytes);
                 channel.write(buffer);
                 
-                // Vytvoříme záznam pro .idx soubor
+                // Create a record for the .idx file
                 IdxEntry idxEntry = new IdxEntry(word, currentOffset, definitionBytes.length);
                 idxEntries.add(idxEntry);
                 
-                // Aktualizujeme offset pro další záznam
+                // Update the offset for the next record
                 currentOffset += definitionBytes.length;
             }
         }
@@ -56,46 +56,46 @@ public class DictFileWriter {
     }
     
     /**
-     * Zapíše definice slov do .dict souboru s použitím existujících .idx záznamů
-     * @param dictFilename Cesta k .dict souboru
-     * @param definitions Mapa slov a jejich definic
-     * @param idxEntries Seznam existujících .idx záznamů
-     * @param sameTypeSequence Hodnota sameTypeSequence pro .ifo soubor (může být null)
-     * @throws IOException Při chybě zápisu souboru
+     * Writes word definitions to a .dict file using existing .idx records
+     * @param dictFilename Path to the .dict file
+     * @param definitions Map of words and their definitions
+     * @param idxEntries List of existing .idx records
+     * @param sameTypeSequence The sameTypeSequence value for the .ifo file (can be null)
+     * @throws IOException When a file writing error occurs
      */
     public static void writeDictFileWithExistingIdx(String dictFilename, Map<String, WordDefinition> definitions, 
                                                    List<IdxEntry> idxEntries, String sameTypeSequence) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(dictFilename);
              FileChannel channel = fos.getChannel()) {
             
-            // Vytvoříme mapu offsetů pro rychlé vyhledávání
+            // Create a map of offsets for quick lookup
             Map<String, IdxEntry> offsetMap = new java.util.HashMap<>();
             for (IdxEntry entry : idxEntries) {
                 offsetMap.put(entry.word(), entry);
             }
             
-            // Zapíšeme definice na správné offsety
+            // Write definitions at the correct offsets
             for (Map.Entry<String, WordDefinition> entry : definitions.entrySet()) {
                 String word = entry.getKey();
                 WordDefinition wordDef = entry.getValue();
                 
                 IdxEntry idxEntry = offsetMap.get(word);
                 if (idxEntry == null) {
-                    throw new IllegalArgumentException("Chybí idx záznam pro slovo: " + word);
+                    throw new IllegalArgumentException("Missing idx record for word: " + word);
                 }
                 
-                // Převedeme definici na pole bytů
+                // Convert the definition to a byte array
                 byte[] definitionBytes = wordDef.toBytes(sameTypeSequence);
                 
-                // Ověříme, že velikost odpovídá záznamu v idx
+                // Verify that the size matches the record in idx
                 if (definitionBytes.length != idxEntry.size()) {
-                    throw new IllegalArgumentException("Velikost definice neodpovídá záznamu v idx pro slovo: " + word);
+                    throw new IllegalArgumentException("Definition size does not match idx record for word: " + word);
                 }
                 
-                // Nastavíme pozici v souboru podle offsetu v idx záznamu
+                // Set the position in the file according to the offset in the idx record
                 channel.position(idxEntry.offset());
                 
-                // Zapíšeme definici do souboru
+                // Write the definition to the file
                 ByteBuffer buffer = ByteBuffer.wrap(definitionBytes);
                 channel.write(buffer);
             }
