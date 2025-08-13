@@ -1,8 +1,10 @@
 package net.suteren.stardict.wiktionary2stardict.cli;
 
+import net.suteren.stardict.wiktionary2stardict.Version;
 import picocli.CommandLine;
 
-@CommandLine.Command(mixinStandardHelpOptions = true, description = "Wiktionary to Stardict converter CLI") public class CliCommand
+@CommandLine.Command(mixinStandardHelpOptions = true, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
+public class CliCommand
 	implements Runnable {
 
 	@CommandLine.Option(names = { "-v", "--version" }, description = "Print version info")
