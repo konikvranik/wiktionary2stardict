@@ -5,20 +5,18 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import net.suteren.stardict.wiktionary2stardict.jpa.entity.LanguageCombinationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.TranslationEntity;
-import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.repository.WordDefinitionRepository;
 import net.suteren.stardict.wiktionary2stardict.model.Sense;
+import net.suteren.stardict.wiktionary2stardict.model.Sound;
 import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.DictType;
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
@@ -42,8 +40,9 @@ public class StardictExportService {
 	}
 
 	public void export(String outputPrefix, String sametypesequence, String bookname) throws IOException {
-		repository.findLanguageCombinations()
-			.forEach(lc -> export(outputPrefix, sametypesequence, bookname, lc.from(), lc.to()));
+		for (LanguageCombinationEntity lc : repository.findLanguageCombinations()) {
+			export(outputPrefix, sametypesequence, bookname, lc.from(), lc.to());
+		}
 	}
 
 	public void export(String outputPrefix, String sametypesequence, String bookname, String langCodeFrom, String langCodeTo) throws IOException {
@@ -52,37 +51,15 @@ public class StardictExportService {
 
 		List<TranslationEntity> all = repository.findAllTranslations(langCodeFrom, langCodeTo);
 		for (TranslationEntity e : all) {
-			if (langCodeFrom != null && !langCodeFrom.isBlank()) {
-				if (e.getLanguage() == null || !langCodeFrom.equals(e.getLanguage()))
-					continue;
-			}
 			WiktionaryEntry entry;
 			try {
-				entry = mapper.readValue(e.getJson(), WiktionaryEntry.class);
+				entry = mapper.readValue(e.definition().getJson(), WiktionaryEntry.class);
 			} catch (Exception ex) {
 				continue; // skip malformed stored entries
 			}
-			if (entry.getWord() == null || entry.getWord().isBlank())
+			if (StringUtils.isBlank(e.source().getWord()))
 				continue;
-
-			List<String> glosses = new ArrayList<>();
-			if (entry.getSenses() != null) {
-				for (Sense s : entry.getSenses()) {
-					if (s.getGlosses() != null && !s.getGlosses().isEmpty()) {
-						glosses.addAll(s.getGlosses());
-					} else if (s.getRawGlosses() != null && !s.getRawGlosses().isEmpty()) {
-						glosses.addAll(s.getRawGlosses());
-					}
-				}
-			}
-			if (glosses.isEmpty())
-				continue; // skip words without glosses
-
-			String meaning = String.join("; ", glosses);
-			WordDefinition wd = new WordDefinition();
-			wd.setWord(entry.getWord());
-			wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, meaning));
-			definitions.add(wd);
+			definitions.add(constructWordDefinition(entry));
 		}
 
 		// Write dict -> idx entries
@@ -122,9 +99,27 @@ public class StardictExportService {
 			null,
 			"Generated from Wiktionary JSONL",
 			LocalDate.now(),
-			Set.of(EntryType.MEANING),
+			null,
 			DictType.WORDNET
 		);
 		InfoFileWriter.write(outputPrefix + ".ifo", info);
+	}
+
+	private static WordDefinition constructWordDefinition(WiktionaryEntry entry) {
+		WordDefinition wd = new WordDefinition();
+		wd.setWord(entry.getWord());
+
+		List<DefinitionEntry> wordDefinitions = wd.getDefinitions();
+		entry.getSenses().stream()
+			.map(Sense::getSense)
+			.filter(StringUtils::isNotBlank)
+			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
+			.forEach(wordDefinitions::add);
+
+		entry.getSounds().stream()
+			.map(Sound::getIpa)
+			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
+			.forEach(wordDefinitions::add);
+		return wd;
 	}
 }
