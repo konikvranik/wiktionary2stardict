@@ -16,6 +16,12 @@ import lombok.Setter;
 @Entity public class SynonymumEntity {
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
+
 	@Column String language;
 	@Column String word;
+
+	public SynonymumEntity(String s, String lang) {
+		word = s;
+		language = lang;
+	}
 }
