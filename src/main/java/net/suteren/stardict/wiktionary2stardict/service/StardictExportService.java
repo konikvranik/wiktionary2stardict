@@ -2,6 +2,8 @@ package net.suteren.stardict.wiktionary2stardict.service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import net.suteren.stardict.wiktionary2stardict.jpa.entity.TranslationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.repository.WordDefinitionRepository;
 import net.suteren.stardict.wiktionary2stardict.model.Sense;
@@ -38,14 +40,14 @@ public class StardictExportService {
         this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public void export(String outputPrefix, String sametypesequence, String bookname, String langCodeFilter) throws IOException {
+    public void export(String outputPrefix, String sametypesequence, String bookname, String langCodeFrom, String langCodeTo) throws IOException {
         // Build definitions map sorted by word
         Map<String, WordDefinition> definitions = new TreeMap<>();
 
-        List<WordDefinitionEntity> all = repository.findAll();
+        List<TranslationEntity> all = repository.findAllTranslations(langCodeFrom, langCodeTo);
         for (WordDefinitionEntity e : all) {
-            if (langCodeFilter != null && !langCodeFilter.isBlank()) {
-                if (e.getLanguage() == null || !langCodeFilter.equals(e.getLanguage())) continue;
+            if (langCodeFrom != null && !langCodeFrom.isBlank()) {
+                if (e.getLanguage() == null || !langCodeFrom.equals(e.getLanguage())) continue;
             }
             WiktionaryEntry entry;
             try {

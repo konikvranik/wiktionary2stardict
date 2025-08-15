@@ -6,9 +6,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -37,52 +34,41 @@ public class WiktionaryImportService {
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
-	public int importJsonlPath(String path, String languageFilter, String sourceLabel) throws IOException {
+	public int importJsonlPath(String path) throws IOException {
+		int count = 0;
 		File f = new File(path);
-		List<File> files = new ArrayList<>();
 		if (f.isDirectory()) {
-			File[] list = f.listFiles((dir, name) -> name.endsWith(".jsonl"));
-			if (list != null) {
-				for (File it : list)
-					files.add(it);
-			}
+			count += importJsonlPath(f.getPath());
 		} else if (f.isFile()) {
-			files.add(f);
+			count += importJsonlFile(f);
 		} else {
 			throw new IOException("Path not found: " + path);
-		}
-
-		int count = 0;
-		for (File file : files) {
-			count += importJsonlFile(file, languageFilter, sourceLabel);
 		}
 		return count;
 	}
 
-	public int importJsonlFile(File file, String languageFilter, String sourceLabel) throws IOException {
+	public int importJsonlFile(File file) throws IOException {
 		int saved = 0;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				line = line.trim();
-				if (line.isEmpty())
-					continue;
-				if (processEntry(file, languageFilter, sourceLabel, line, parseEntry(line)))
-					continue;
-				saved++;
+		if (file.getName().endsWith(".jsonl")) {
+			String sourceLabel = file.getName().replaceAll("^kaikki.org-dictionary-(.*)\\.jsonl$", "$1");
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+				String line;
+				while ((line = br.readLine()) != null) {
+					line = line.trim();
+					if (line.isEmpty())
+						continue;
+					if (processEntry(file, sourceLabel, line, parseEntry(line)))
+						continue;
+					saved++;
+				}
 			}
 		}
 		return saved;
 	}
 
-	private boolean processEntry(File file, String languageFilter, String sourceLabel, String line, WiktionaryEntry entry) {
+	private boolean processEntry(File file, String sourceLabel, String line, WiktionaryEntry entry) {
 		if (entry == null)
 			return true;
-		if (StringUtils.isNoneBlank(languageFilter)
-			&& !(Objects.equals(languageFilter, entry.getLang_code())
-			|| Objects.equals(languageFilter, entry.getLang()))) {
-			return true;
-		}
 		if (StringUtils.isBlank(entry.getWord()))
 			return true;
 		WordDefinitionEntity e = new WordDefinitionEntity();
