@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 public class Holonym {
     /** Unprocessed classification tags */
     private List<String> raw_tags;
-
+    
     /** Romanized form of the holonym */
     private String roman;
-
+    
     /** Classification tags for this holonym */
     private List<String> tags;
-
+    
     /** The holonym word itself */
     private String word;
 }

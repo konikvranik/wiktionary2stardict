@@ -14,16 +14,16 @@ import java.util.List;
 public class Phrase {
     /** Romanized form of the phrase */
     private String roman;
-
+    
     /** Ruby text for pronunciation guidance */
     private List<List<String>> ruby;
-
+    
     /** Specific meaning or context of this phrase */
     private String sense;
-
+    
     /** Classification tags for this phrase */
     private List<String> tags;
-
+    
     /** The phrase itself */
     private String word;
 }

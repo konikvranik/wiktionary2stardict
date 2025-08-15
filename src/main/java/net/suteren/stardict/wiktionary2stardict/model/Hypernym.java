@@ -14,16 +14,16 @@ import java.util.List;
 public class Hypernym {
     /** Unprocessed classification tags */
     private List<String> raw_tags;
-
+    
     /** Romanized form of the hypernym */
     private String roman;
-
+    
     /** Specific meaning or context of this hypernym relationship */
     private String sense;
-
+    
     /** Classification tags for this hypernym */
     private List<String> tags;
-
+    
     /** The hypernym word itself */
     private String word;
 }

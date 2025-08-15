@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+/python/*-dict/
+/python/*.db
+/python/kaikki.org-dictionary-*.jsonl

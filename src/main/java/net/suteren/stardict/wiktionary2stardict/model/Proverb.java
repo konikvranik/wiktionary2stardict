@@ -14,13 +14,13 @@ import java.util.List;
 public class Proverb {
     /** Romanized form of the proverb */
     private String roman;
-
+    
     /** Specific meaning or context of this proverb */
     private String sense;
-
+    
     /** Classification tags for this proverb */
     private List<String> tags;
-
+    
     /** The proverb itself */
     private String word;
 }

@@ -14,16 +14,16 @@ import lombok.NoArgsConstructor;
 public class Form {
 	/** The form itself */
 	private String form;
-
+	
 	/** Literal meaning of this form */
 	private String literal_meaning;
-
+	
 	/** Unprocessed classification tags */
 	private List<String> raw_tags;
-
+	
 	/** Romanized form */
 	private String roman;
-
+	
 	/** Classification tags for this form */
 	private List<String> tags;
 }

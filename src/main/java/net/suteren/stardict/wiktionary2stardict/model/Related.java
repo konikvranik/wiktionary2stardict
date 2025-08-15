@@ -14,19 +14,19 @@ import java.util.List;
 public class Related {
     /** Unprocessed classification tags */
     private List<String> raw_tags;
-
+    
     /** Romanized form of the related word */
     private String roman;
-
+    
     /** Ruby text for pronunciation guidance */
     private List<List<String>> ruby;
-
+    
     /** Specific meaning or context of this relationship */
     private String sense;
-
+    
     /** Classification tags for this related word */
     private List<String> tags;
-
+    
     /** The related word itself */
     private String word;
 }

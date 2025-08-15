@@ -14,19 +14,19 @@ import java.util.List;
 public class Hyponym {
     /** Unprocessed classification tags */
     private List<String> raw_tags;
-
+    
     /** Romanized form of the hyponym */
     private String roman;
-
+    
     /** Ruby text for pronunciation guidance */
     private List<List<String>> ruby;
-
+    
     /** Specific meaning or context of this hyponym relationship */
     private String sense;
-
+    
     /** Classification tags for this hyponym */
     private List<String> tags;
-
+    
     /** The hyponym word itself */
     private String word;
 }
