@@ -1,5 +1,8 @@
 package net.suteren.stardict.wiktionary2stardict.cli;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import net.suteren.stardict.wiktionary2stardict.Version;
@@ -25,6 +28,9 @@ public class CliCommand implements Runnable {
 	@CommandLine.Option(names = { "-i", "--import-jsonl" }, description = "Path to Wiktionary JSONL file or directory")
 	String importPath;
 
+	@CommandLine.Option(names = { "-d", "--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
+	String[] downloadLangs;
+
 	@CommandLine.Option(names = { "-lf", "--lang-code-from" }, description = "Language code filter (e.g., 'cs', 'en')")
 	String langCodeFrom;
 
@@ -49,8 +55,16 @@ public class CliCommand implements Runnable {
 			}
 
 			int imported = 0;
+
+			if (downloadLangs != null && downloadLangs.length > 0) {
+				List<String> langs = Arrays.stream(downloadLangs).toList();
+				int dlImported = importService.downloadAndImportLanguages(langs);
+				imported += dlImported;
+				System.out.println("Downloaded and imported entries: " + dlImported + " (total imported: " + imported + ")");
+			}
+
 			if (importPath != null && !importPath.isBlank()) {
-				imported = importService.importJsonlPath(importPath);
+				imported += importService.importJsonlPath(importPath);
 				System.out.println("Imported entries: " + imported);
 			}
 
@@ -59,8 +73,8 @@ public class CliCommand implements Runnable {
 				System.out.println("Exported StarDict files with prefix: " + exportPrefix);
 			}
 
-			if ((importPath == null || importPath.isBlank()) && (exportPrefix == null || exportPrefix.isBlank()) && !versionRequested) {
-				System.out.println("No action requested. Use --import-jsonl and/or --export-stardict.");
+			if ((downloadLangs == null || downloadLangs.length == 0) && (importPath == null || importPath.isBlank()) && (exportPrefix == null || exportPrefix.isBlank()) && !versionRequested) {
+				System.out.println("No action requested. Use --download-langs and/or --import-jsonl and/or --export-stardict.");
 			}
 		} catch (Exception ex) {
 			System.err.println("Error: " + ex.getMessage());
