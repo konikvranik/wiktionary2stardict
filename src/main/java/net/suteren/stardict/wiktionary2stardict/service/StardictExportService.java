@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.LanguageCombinationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.TranslationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.repository.WordDefinitionRepository;
@@ -28,8 +30,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileWriter;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.IdxFileWriter;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 
-@Service
-public class StardictExportService {
+@Slf4j
+@Service public class StardictExportService {
 
 	private final WordDefinitionRepository repository;
 	private final ObjectMapper mapper;
@@ -40,7 +42,11 @@ public class StardictExportService {
 	}
 
 	public void export(String outputPrefix, String sametypesequence, String bookname) throws IOException {
-		for (LanguageCombinationEntity lc : repository.findLanguageCombinations()) {
+		List<LanguageCombinationEntity> languageCombinations = repository.findLanguageCombinations();
+		log.info("Exporting {} language combinations: {}", languageCombinations.size(), languageCombinations.stream()
+			.map(lc -> lc.from() + "->" + lc.to())
+			.collect(Collectors.joining(";")));
+		for (LanguageCombinationEntity lc : languageCombinations) {
 			export(outputPrefix, sametypesequence, bookname, lc.from(), lc.to());
 		}
 	}

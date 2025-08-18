@@ -3,13 +3,17 @@ package net.suteren.stardict.wiktionary2stardict.cli;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
 import net.suteren.stardict.wiktionary2stardict.Version;
 import net.suteren.stardict.wiktionary2stardict.service.StardictExportService;
 import net.suteren.stardict.wiktionary2stardict.service.WiktionaryImportService;
 import picocli.CommandLine;
 
+@Slf4j
 @Component
 @CommandLine.Command(mixinStandardHelpOptions = true, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
 public class CliCommand implements Runnable {
@@ -24,6 +28,9 @@ public class CliCommand implements Runnable {
 
 	@CommandLine.Option(names = { "-v", "--version" }, description = "Print version info")
 	boolean versionRequested;
+
+	@CommandLine.Option(names = { "-ll", "--list-kaikki-langs" }, description = "List available languages from Kaikki and exit")
+	boolean listKaikkiLangs;
 
 	@CommandLine.Option(names = { "-i", "--import-jsonl" }, description = "Path to Wiktionary JSONL file or directory")
 	String importPath;
@@ -50,7 +57,13 @@ public class CliCommand implements Runnable {
 	public void run() {
 		try {
 			if (versionRequested) {
-				System.out.println("wiktionary2stardict version 0.0.1-SNAPSHOT");
+				log.info("wiktionary2stardict version 0.0.1-SNAPSHOT");
+				return;
+			}
+
+			if (listKaikkiLangs) {
+				List<String> langs = importService.listKaikkiLanguages();
+				langs.forEach(lang -> log.info(lang));
 				return;
 			}
 
@@ -60,25 +73,24 @@ public class CliCommand implements Runnable {
 				List<String> langs = Arrays.stream(downloadLangs).toList();
 				int dlImported = importService.downloadAndImportLanguages(langs);
 				imported += dlImported;
-				System.out.println("Downloaded and imported entries: " + dlImported + " (total imported: " + imported + ")");
+				log.info("Downloaded and imported entries: {} (total imported: {})", dlImported, imported);
 			}
 
 			if (importPath != null && !importPath.isBlank()) {
 				imported += importService.importJsonlPath(importPath);
-				System.out.println("Imported entries: " + imported);
+				log.info("Imported entries: {}", imported);
 			}
 
 			if (exportPrefix != null && !exportPrefix.isBlank()) {
 				exportService.export(exportPrefix, sameTypeSequence, bookname, langCodeFrom, langCodeTo);
-				System.out.println("Exported StarDict files with prefix: " + exportPrefix);
+				log.info("Exported StarDict files with prefix: {}", exportPrefix);
 			}
 
-			if ((downloadLangs == null || downloadLangs.length == 0) && (importPath == null || importPath.isBlank()) && (exportPrefix == null || exportPrefix.isBlank()) && !versionRequested) {
-				System.out.println("No action requested. Use --download-langs and/or --import-jsonl and/or --export-stardict.");
+			if ((downloadLangs == null || downloadLangs.length == 0) && (importPath == null || importPath.isBlank()) && (exportPrefix == null || exportPrefix.isBlank()) && !versionRequested && !listKaikkiLangs) {
+				log.info("No action requested. Use --list-kaikki-langs and/or --download-langs and/or --import-jsonl and/or --export-stardict.");
 			}
 		} catch (Exception ex) {
-			System.err.println("Error: " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("Error occurred during CLI execution", ex);
 			System.exit(1);
 		}
 	}

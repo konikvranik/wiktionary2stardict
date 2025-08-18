@@ -188,7 +188,7 @@ public class StardictFileTest {
 	 * @param loadedSynonyms Načtená synonyma
 	 * @return true pokud data odpovídají, jinak false
 	 */
-	private static boolean verifyData(Map<String, WordDefinition> originalData, Map<String, WordDefinition> loadedData,
+	private static boolean verifyData(List< WordDefinition> originalData, Map<String, WordDefinition> loadedData,
 		List<SynonymumEntry> originalSynonyms, List<SynonymumEntry> loadedSynonyms) {
 
 		// Ověříme počet záznamů
@@ -203,9 +203,9 @@ public class StardictFileTest {
 		}
 
 		// Ověříme definice slov
-		for (Map.Entry<String, WordDefinition> entry : originalData.entrySet()) {
-			String word = entry.getKey();
-			WordDefinition originalDef = entry.getValue();
+		for (WordDefinition entry : originalData) {
+			String word = entry.getWord();
+			WordDefinition originalDef = entry;
 			WordDefinition loadedDef = loadedData.get(word);
 
 			if (loadedDef == null) {
