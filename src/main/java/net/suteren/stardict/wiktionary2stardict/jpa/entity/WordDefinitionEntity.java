@@ -9,13 +9,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(name = "definition")
+@Table(name = "definition", indexes = { @Index(columnList = "word"), @Index(columnList = "language"), @Index(columnList = "source") })
 @Getter @Setter
 @Entity public class WordDefinitionEntity {
 

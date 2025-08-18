@@ -91,8 +91,13 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 			count = repository.countAll();
 			repository.deleteAll();
 		} else {
-			count = repository.countBySource(source);
-			repository.deleteBySource(source);
+			count = source.stream()
+				.mapToLong(s -> {
+					long c = repository.countBySource(s);
+					repository.deleteBySource(s);
+					return c;
+				})
+				.sum();
 		}
 		return count;
 	}
