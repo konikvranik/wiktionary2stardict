@@ -15,10 +15,12 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,6 +29,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +61,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
+	@Transactional
 	public int importJsonlPath(String path) throws IOException {
 		int count = 0;
 		File f = new File(path);
@@ -75,6 +80,19 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 			count += importJsonlFile(f);
 		} else {
 			throw new IOException("Path not found: " + path);
+		}
+		return count;
+	}
+
+	@Transactional
+	public long cleanupEntries(Collection<String> source) {
+		long count;
+		if (source == null || source.isEmpty()) {
+			count = repository.countAll();
+			repository.deleteAll();
+		} else {
+			count = repository.countBySource(source);
+			repository.deleteBySource(source);
 		}
 		return count;
 	}
@@ -153,6 +171,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 	 * Language handling follows the Python pattern: URL path uses the language verbatim, while
 	 * the filename part strips spaces, hyphens and apostrophes.
 	 */
+	@Transactional
 	public int downloadAndImportLanguages(List<String> languages) throws IOException, InterruptedException {
 		if (languages == null || languages.isEmpty())
 			return 0;
@@ -209,11 +228,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 			.orElse(entry.getLang());
 		wordDefinitionEntity.setLanguage(language);
 		wordDefinitionEntity.setWord(entry.getWord());
-		wordDefinitionEntity.setSenses(entry.getSenses().stream()
-			.map(Sense::getAllLinks)
-			.flatMap(Collection::stream)
-			.map(SenseEntity::new)
-			.toList()
+		wordDefinitionEntity.setSenses(extractSenses(entry)
 		);
 		wordDefinitionEntity.setSynonymums(
 			Optional.of(entry)
@@ -221,12 +236,29 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 				.stream()
 				.flatMap(Collection::stream)
 				.map(Synonym::getWord)
+				.filter(Objects::nonNull)
 				.map(s -> new SynonymumEntity(s, language))
-				.toList());
+				.collect(Collectors.toSet()));
 		wordDefinitionEntity.setJson(line);
-		repository.save(wordDefinitionEntity);
+		if (wordDefinitionEntity.getWord() != null && (!CollectionUtils.isEmpty(wordDefinitionEntity.getSenses()) || !CollectionUtils.isEmpty(
+			wordDefinitionEntity.getSynonymums())))
+			repository.save(wordDefinitionEntity);
 		log.info("Imported {} from {}", entry.getWord(), file.getName());
 		return false;
+	}
+
+	private static Set<SenseEntity> extractSenses(WiktionaryEntry entry) {
+		try {
+			return entry.getSenses().stream()
+				.map(Sense::getAllLinks)
+				.filter(Objects::nonNull)
+				.flatMap(Collection::stream)
+				.filter(Objects::nonNull)
+				.map(SenseEntity::new)
+				.collect(Collectors.toSet());
+		} catch (NullPointerException e) {
+			throw e;
+		}
 	}
 
 	private WiktionaryEntry parseEntry(String line) {

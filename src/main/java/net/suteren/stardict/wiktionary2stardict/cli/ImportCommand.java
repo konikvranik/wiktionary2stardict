@@ -2,6 +2,7 @@ package net.suteren.stardict.wiktionary2stardict.cli;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
@@ -26,10 +27,18 @@ import picocli.CommandLine;
 		"--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
 	String[] downloadLangs;
 
+	@CommandLine.Option(names = { "-c",
+		"--cleanup" }, split = ",", description = "Comma-separated sources to delete")
+	Set<String> cleanupSources;
+
 	@Override
 	public void run() {
 		try {
 			int imported = 0;
+
+			if (downloadLangs != null) {
+				importService.cleanupEntries(cleanupSources);
+			}
 
 			if (downloadLangs != null && downloadLangs.length > 0) {
 				List<String> langs = Arrays.stream(downloadLangs).toList();

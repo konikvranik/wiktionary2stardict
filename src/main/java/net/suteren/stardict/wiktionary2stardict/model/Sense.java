@@ -92,6 +92,9 @@ public class Sense {
 	private List<Linkage> formOf;
 
 	public Set<String> getAllLinks() {
+		if(links == null){
+			return null;
+		}
 		return links.stream()
 			.filter(x -> !x.isEmpty())
 			.map(List::getFirst)
