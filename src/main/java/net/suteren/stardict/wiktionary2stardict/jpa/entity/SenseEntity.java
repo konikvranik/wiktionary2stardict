@@ -26,5 +26,5 @@ import lombok.Setter;
 
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
-	@Column String word;
+	@Column(length = 1024) String word;
 }
