@@ -210,7 +210,8 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 		wordDefinitionEntity.setLanguage(language);
 		wordDefinitionEntity.setWord(entry.getWord());
 		wordDefinitionEntity.setSenses(entry.getSenses().stream()
-			.map(Sense::getSense)
+			.map(Sense::getAllLinks)
+			.flatMap(Collection::stream)
 			.map(SenseEntity::new)
 			.toList()
 		);
