@@ -24,7 +24,5 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 
 	void deleteBySource(String source);
 
-	long countAll();
-
 	long countBySource(String source);
 }

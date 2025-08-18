@@ -88,7 +88,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 	public long cleanupEntries(Collection<String> source) {
 		long count;
 		if (source == null || source.isEmpty()) {
-			count = repository.countAll();
+			count = repository.count();
 			repository.deleteAll();
 		} else {
 			count = source.stream()
