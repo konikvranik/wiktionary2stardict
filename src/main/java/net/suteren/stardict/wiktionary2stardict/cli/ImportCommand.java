@@ -27,8 +27,7 @@ import picocli.CommandLine;
 		"--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
 	String[] downloadLangs;
 
-	@CommandLine.Option(names = { "-c",
-		"--cleanup" }, split = ",", description = "Comma-separated sources to delete")
+	@CommandLine.Option(names = { "-c", "--cleanup" }, arity = "*", split = ",",defaultValue = "Set.of()", description = "Comma-separated sources to delete")
 	Set<String> cleanupSources;
 
 	@Override

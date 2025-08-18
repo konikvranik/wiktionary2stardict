@@ -37,12 +37,12 @@ import picocli.CommandLine;
 
 		private final ApplicationContext ctx;
 
-		@Override public <K> K create(Class<K> cls) {
+		@Override public <K> K create(Class<K> cls) throws Exception {
 			K bean = ctx.getBeanProvider(cls).getIfAvailable();
 			if (bean != null) {
 				return bean;
 			}
-			return ctx.getAutowireCapableBeanFactory().createBean(cls);
+			return CommandLine.defaultFactory().create(cls);
 		}
 	}
 }
