@@ -255,7 +255,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 	private static Set<SenseEntity> extractSenses(WiktionaryEntry entry) {
 		try {
 			return entry.getSenses().stream()
-				.map(Sense::getAllLinks)
+				.map(Sense::getGlosses)
 				.filter(Objects::nonNull)
 				.flatMap(Collection::stream)
 				.filter(Objects::nonNull)
