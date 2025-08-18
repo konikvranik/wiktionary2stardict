@@ -10,11 +10,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Table(name = "synonymum", indexes = { @Index(columnList = "word"), @Index(columnList = "language") })
-@Getter @Setter
+@Getter @Setter @NoArgsConstructor
 @Entity public class SynonymumEntity {
+
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
 
