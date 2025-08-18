@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -22,6 +21,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -44,6 +48,8 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 	private final HttpClient httpClient = HttpClient.newHttpClient();
 
 	private static final URI KAAKKI_DICTIONARY_ROOT = URI.create("https://kaikki.org/dictionary/");
+	private static final Pattern LANG_PATTERN = Pattern.compile("(.*\\S)\\s*\\(\\s*\\d+\\s*(?:senses\\s*)?\\)\\s*$");
+	private static final Pattern LANG_URL_PATTERN = Pattern.compile("^/dictionary(/[^/]+(/(?:index.html)?)?)$");
 
 	public WiktionaryImportService(WordDefinitionRepository repository) {
 		this.repository = repository;
@@ -94,10 +100,9 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 
 	/**
 	 * Fetches available languages from https://kaikki.org/dictionary/ and returns a list.
-	 * This implementation avoids external HTML parsers and uses a conservative regex
-	 * over anchor tags to capture immediate subdirectory links (languages).
+	 * Reimplemented to use Jsoup for robust HTML parsing instead of regex.
 	 */
-	public List<String> listKaikkiLanguages() throws IOException, InterruptedException {
+	public Set<Pair<String, String>> listKaikkiLanguages() throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
 			.uri(KAAKKI_DICTIONARY_ROOT)
 			.header("User-Agent", "wiktionary2stardict/" + getClass().getPackage().getImplementationVersion())
@@ -108,55 +113,39 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 		}
 		String html = response.body();
 
-		// Match <a href="something/">Label</a> and collect directory names without additional slashes.
-		Pattern aTag = Pattern.compile("<a\\s+href=\\\"([^\\\"]+)\\\"[^>]*>([^<]*)</a>", Pattern.CASE_INSENSITIVE);
-		Matcher m = aTag.matcher(html);
-		Set<String> langs = new LinkedHashSet<>();
-		while (m.find()) {
-			String href = m.group(1).trim();
-			String label = m.group(2).trim();
-			if (href.isEmpty())
-				continue;
-			// Resolve relative to the dictionary root
-			URI resolved;
-			try {
-				resolved = KAAKKI_DICTIONARY_ROOT.resolve(href);
-			} catch (IllegalArgumentException e) {
-				continue;
+		// Parse with Jsoup using the dictionary root as the base URL
+		Document doc = Jsoup.parse(html, KAAKKI_DICTIONARY_ROOT.toString());
+		Elements links = doc.select("li a[href]");
+		Set<org.apache.commons.lang3.tuple.Pair<String, String>> langs = new LinkedHashSet<>();
+
+		for (Element a : links) {
+			String absHref = a.attr("abs:href");
+			Matcher m = LANG_PATTERN.matcher(a.text());
+			String lang = null;
+			if (m.matches()) {
+				lang = m.group(1);
 			}
-			// We only want immediate children under /dictionary/<LANG>/
-			String path = resolved.getPath();
-			if (path == null)
+			String rest = getHref(absHref);
+			if (rest == null)
 				continue;
-			// Expecting /dictionary/<LANG>/ or /dictionary/<LANG>
-			String prefix = "/dictionary/";
-			if (!path.startsWith(prefix))
-				continue;
-			String rest = path.substring(prefix.length());
-			if (rest.isEmpty())
-				continue; // root itself
-			// Remove any leading slash
-			if (rest.startsWith("/"))
-				rest = rest.substring(1);
-			// Accept single-segment optionally ending with slash
-			if (rest.endsWith("/"))
-				rest = rest.substring(0, rest.length() - 1);
-			if (rest.contains("/"))
-				continue; // deeper paths not languages list items
-			String decoded;
-			try {
-				decoded = URLDecoder.decode(rest, StandardCharsets.UTF_8);
-			} catch (IllegalArgumentException e) {
-				decoded = rest; // fallback
-			}
-			// Prefer using visible label if it looks like a proper name matching the segment
-			if (!label.isBlank() && (label.equalsIgnoreCase(decoded) || !label.contains("/"))) {
-				langs.add(label);
-			} else {
-				langs.add(decoded);
-			}
+
+			langs.add(Pair.of(rest, lang));
 		}
-		return List.copyOf(langs);
+		return langs;
+	}
+
+	private static String getHref(String absHref) {
+		if (absHref.isBlank())
+			return null;
+		try {
+			return Optional.ofNullable(URI.create(absHref).getPath())
+				.map(LANG_URL_PATTERN::matcher)
+				.filter(Matcher::matches)
+				.map(m -> m.group(1))
+				.orElse(null);
+		} catch (IllegalArgumentException ignored) {
+			return null;
+		}
 	}
 
 	/**

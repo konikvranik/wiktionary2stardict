@@ -1,4 +1,4 @@
-package net.suteren.stardict.wiktionary2stardict;
+package net.suteren.stardict.wiktionary2stardict.cli;
 
 import java.io.IOException;
 import java.util.Properties;

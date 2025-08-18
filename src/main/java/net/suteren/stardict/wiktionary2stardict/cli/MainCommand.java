@@ -3,39 +3,31 @@ package net.suteren.stardict.wiktionary2stardict.cli;
 import java.util.Arrays;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.suteren.stardict.wiktionary2stardict.Version;
 import net.suteren.stardict.wiktionary2stardict.service.StardictExportService;
 import net.suteren.stardict.wiktionary2stardict.service.WiktionaryImportService;
 import picocli.CommandLine;
 
 @Slf4j
-@Component
-@CommandLine.Command(mixinStandardHelpOptions = true, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
-public class CliCommand implements Runnable {
+@RequiredArgsConstructor
+@CommandLine.Command(mixinStandardHelpOptions = true, subcommands = {
+	ListKaikkiLangsCommand.class }, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
+@Component public class MainCommand implements Runnable {
 
 	private final WiktionaryImportService importService;
 	private final StardictExportService exportService;
 
-	public CliCommand(WiktionaryImportService importService, StardictExportService exportService) {
-		this.importService = importService;
-		this.exportService = exportService;
-	}
-
 	@CommandLine.Option(names = { "-v", "--version" }, description = "Print version info")
 	boolean versionRequested;
-
-	@CommandLine.Option(names = { "-ll", "--list-kaikki-langs" }, description = "List available languages from Kaikki and exit")
-	boolean listKaikkiLangs;
 
 	@CommandLine.Option(names = { "-i", "--import-jsonl" }, description = "Path to Wiktionary JSONL file or directory")
 	String importPath;
 
-	@CommandLine.Option(names = { "-d", "--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
+	@CommandLine.Option(names = { "-d",
+		"--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
 	String[] downloadLangs;
 
 	@CommandLine.Option(names = { "-lf", "--lang-code-from" }, description = "Language code filter (e.g., 'cs', 'en')")
@@ -61,12 +53,6 @@ public class CliCommand implements Runnable {
 				return;
 			}
 
-			if (listKaikkiLangs) {
-				List<String> langs = importService.listKaikkiLanguages();
-				langs.forEach(lang -> log.info(lang));
-				return;
-			}
-
 			int imported = 0;
 
 			if (downloadLangs != null && downloadLangs.length > 0) {
@@ -86,8 +72,9 @@ public class CliCommand implements Runnable {
 				log.info("Exported StarDict files with prefix: {}", exportPrefix);
 			}
 
-			if ((downloadLangs == null || downloadLangs.length == 0) && (importPath == null || importPath.isBlank()) && (exportPrefix == null || exportPrefix.isBlank()) && !versionRequested && !listKaikkiLangs) {
-				log.info("No action requested. Use --list-kaikki-langs and/or --download-langs and/or --import-jsonl and/or --export-stardict.");
+			if ((downloadLangs == null || downloadLangs.length == 0) && (importPath == null || importPath.isBlank()) && (exportPrefix == null
+				|| exportPrefix.isBlank()) && !versionRequested) {
+				log.info("No action requested. Use 'list-kaikki-langs' subcommand and/or --download-langs and/or --import-jsonl and/or --export-stardict.");
 			}
 		} catch (Exception ex) {
 			log.error("Error occurred during CLI execution", ex);

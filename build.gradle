@@ -29,6 +29,7 @@ dependencies {
 	implementation libs.picocli
 	implementation libs.semver4j
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'org.jsoup:jsoup:1.17.2'
 	annotationProcessor libs.picocli.codegen
 	runtimeOnly libs.h2
 	testImplementation libs.spring.boot.starter.test
