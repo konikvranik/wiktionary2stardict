@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.cli.MainCommand;
 import picocli.CommandLine;
+// ... existing code ...
+import java.util.Arrays;
+import java.util.stream.IntStream;
+// ... existing code ...
 
 @SpringBootApplication public class Wiktionary2stardictApplication implements ApplicationRunner, ExitCodeGenerator {
 
@@ -25,7 +29,29 @@ import picocli.CommandLine;
 	}
 
 	@Override public void run(ApplicationArguments args) {
-		exitCode = new CommandLine(mainCommand, factory).execute(args.getSourceArgs());
+		String[] src = args.getSourceArgs();
+
+		int sepIdx = IntStream.range(0, src.length)
+			.filter(i -> "--".equals(src[i]))
+			.findFirst()
+			.orElse(-1);
+
+		String[] cliArgs;
+		if (sepIdx >= 0) {
+			cliArgs = Arrays.copyOfRange(src, sepIdx + 1, src.length);
+		} else {
+			cliArgs = Arrays.stream(src)
+				.filter(a -> {
+					String s = a.startsWith("-D") ? a.substring(2) : a;
+					return !(s.startsWith("--spring.")
+						|| s.startsWith("--management.")
+						|| s.startsWith("--server.")
+						|| s.equals("--"));
+				})
+				.toArray(String[]::new);
+		}
+
+		exitCode = new CommandLine(mainCommand, factory).execute(cliArgs);
 	}
 
 	@Override public int getExitCode() {

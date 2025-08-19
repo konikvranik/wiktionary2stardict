@@ -18,8 +18,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(name = "definition", indexes = { @Index(columnList = "word", name = "idx_word"), @Index(columnList = "language", name = "idx_language"),
-	@Index(columnList = "source", name = "idx_source"), @Index(columnList = "type", name = "idx_type") })
+@Table(name = "definition", indexes = { @Index(columnList = "word", name = "idx_definition_word"), @Index(columnList = "language", name = "idx_definition_language"),
+	@Index(columnList = "source", name = "idx_definition_source"), @Index(columnList = "type", name = "idx_definition_type") })
 @Getter @Setter
 @Entity public class WordDefinitionEntity {
 
@@ -33,7 +33,7 @@ import lombok.Setter;
 	@Column private String type;
 
 	@Lob
-	@Column(columnDefinition = "CLOB") private String json;
+	@Column private String json;
 
 	@JoinColumn(name = "word_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_link_word_definition"))
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<WordDefinitionLinkEntity> links;
