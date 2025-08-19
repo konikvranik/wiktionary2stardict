@@ -35,9 +35,6 @@ import lombok.Setter;
 	@Lob
 	@Column(columnDefinition = "CLOB") private String json;
 
-	@JoinColumn(name = "word_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_synonymum_word_definition"))
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<SynonymumEntity> synonymums;
-
-	@JoinColumn(name = "word_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_sense_word_definition"))
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<SenseEntity> senses;
+	@JoinColumn(name = "word_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_link_word_definition"))
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<WordDefinitionLinkEntity> links;
 }

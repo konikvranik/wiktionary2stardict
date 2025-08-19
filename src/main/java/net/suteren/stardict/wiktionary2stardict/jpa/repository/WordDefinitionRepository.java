@@ -13,13 +13,13 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 
 @Repository public interface WordDefinitionRepository extends JpaRepository<WordDefinitionEntity, UUID> {
 
-	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and exists (select s1 from e1.senses s1 where s1.word in (select s2.word from e2.senses s2))")
+	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and exists (select l1 from e1.links l1 where l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word in (select l2.word from e2.links l2 where l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING))")
 	List<TranslationEntity> findAllTranslations(String fromLang, String toLAng);
 
-	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and e1.word = :word and exists (select s1 from e1.senses s1 where s1.word in (select s2.word from e2.senses s2))")
+	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and e1.word = :word and exists (select l1 from e1.links l1 where l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and  l1.word in (select l2.word from e2.links l2 where l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING))")
 	List<TranslationEntity> findTranslation(String fromLang, String toLAng, String word);
 
-	@Query("select e1.language, e2.language, count(e1.language) from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language != e2.language and exists (select s1 from e1.senses s1 where s1.word in (select s2.word from e2.senses s2)) group by e1.language, e2.language")
+	@Query("select e1.language, e2.language, count(e1.language) from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language != e2.language and exists (select l1 from e1.links l1 where l1.type= net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word in (select l2.word from e2.links l2 where l2.type=net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING)) group by e1.language, e2.language")
 	List<LanguageCombinationEntity> findLanguageCombinations();
 
 	void deleteBySource(String source);

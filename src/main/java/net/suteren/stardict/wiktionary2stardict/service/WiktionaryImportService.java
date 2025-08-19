@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -30,15 +31,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
-import net.suteren.stardict.wiktionary2stardict.jpa.entity.SenseEntity;
-import net.suteren.stardict.wiktionary2stardict.jpa.entity.SynonymumEntity;
+import net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
+import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionLinkEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.repository.WordDefinitionRepository;
 import net.suteren.stardict.wiktionary2stardict.model.Sense;
 import net.suteren.stardict.wiktionary2stardict.model.Synonym;
@@ -234,33 +234,29 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 		wordDefinitionEntity.setLanguage(language);
 		wordDefinitionEntity.setWord(entry.getWord());
 		wordDefinitionEntity.setType(entry.getPos());
-		wordDefinitionEntity.setSenses(extractSenses(entry)
-		);
-		wordDefinitionEntity.setSynonymums(
-			Optional.of(entry)
-				.map(WiktionaryEntry::getSynonyms)
-				.stream()
-				.flatMap(Collection::stream)
-				.map(Synonym::getWord)
-				.filter(Objects::nonNull)
-				.map(s -> new SynonymumEntity(s, language))
-				.collect(Collectors.toSet()));
+		wordDefinitionEntity.setLinks(extractSenses(entry, language));
 		wordDefinitionEntity.setJson(line);
-		if (wordDefinitionEntity.getWord() != null && (!CollectionUtils.isEmpty(wordDefinitionEntity.getSenses()) || !CollectionUtils.isEmpty(
-			wordDefinitionEntity.getSynonymums())))
+		if (wordDefinitionEntity.getWord() != null)
 			repository.save(wordDefinitionEntity);
 		log.info("Imported {} from {}", entry.getWord(), file.getName());
 		return false;
 	}
 
-	private static Set<SenseEntity> extractSenses(WiktionaryEntry entry) {
+	private static Set<WordDefinitionLinkEntity> extractSenses(WiktionaryEntry entry, String language) {
 		try {
-			return entry.getSenses().stream()
-				.map(Sense::getGlosses)
-				.filter(Objects::nonNull)
-				.flatMap(Collection::stream)
-				.filter(Objects::nonNull)
-				.map(SenseEntity::new)
+			return Stream.concat(Optional.of(entry)
+						.map(WiktionaryEntry::getSynonyms)
+						.stream()
+						.flatMap(Collection::stream)
+						.map(Synonym::getWord)
+						.filter(Objects::nonNull)
+						.map(s -> new WordDefinitionLinkEntity(s, language, LinkType.SYNONYMUM)),
+					entry.getSenses().stream()
+						.map(Sense::getGlosses)
+						.filter(Objects::nonNull)
+						.flatMap(Collection::stream)
+						.filter(Objects::nonNull)
+						.map(s -> new WordDefinitionLinkEntity(s, language, LinkType.MEANING)))
 				.collect(Collectors.toSet());
 		} catch (NullPointerException e) {
 			throw e;

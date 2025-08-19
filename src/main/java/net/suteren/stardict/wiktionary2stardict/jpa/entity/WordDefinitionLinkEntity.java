@@ -13,18 +13,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Table(name = "synonymum", indexes = { @Index(columnList = "word", name = "idx_word"), @Index(columnList = "language", name = "idx_language") })
-@Getter @Setter @NoArgsConstructor
-@Entity public class SynonymumEntity {
+@NoArgsConstructor
+@Table(name = "link", indexes = { @Index(columnList = "word", name = "idx_word"), @Index(columnList = "type", name = "idx_type"),
+	@Index(columnList = "language", name = "idx_language") })
+@Getter @Setter
+@Entity public class WordDefinitionLinkEntity {
+
+	public WordDefinitionLinkEntity(String word, String language, LinkType type) {
+		this.word = word;
+		this.language = language;
+		this.type = type;
+	}
 
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
-
+	@Column(length = 1024) String word;
 	@Column String language;
-	@Column String word;
-
-	public SynonymumEntity(String s, String lang) {
-		word = s;
-		language = lang;
-	}
+	@Column LinkType type;
 }
