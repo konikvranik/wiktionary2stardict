@@ -8,14 +8,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
-@Table(name = "sense", indexes = @Index(columnList = "word"))
+@Table(name = "sense", indexes = @Index(columnList = "word", name = "idx_word"))
 @Getter @Setter
 @Entity public class SenseEntity {
 
@@ -26,5 +25,4 @@ import lombok.Setter;
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
 	@Column(length = 1024) String word;
-	@ManyToOne private WordDefinitionEntity wordDefinition;
 }
