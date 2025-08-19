@@ -1,6 +1,5 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.time.LocalDate;
@@ -69,6 +68,32 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		}
 	}
 
+	private static WordDefinition constructWordDefinition(WiktionaryEntry entry) {
+		WordDefinition wd = new WordDefinition();
+		wd.setWord(entry.getWord());
+
+		List<DefinitionEntry> wordDefinitions = wd.getDefinitions();
+		Optional.of(entry)
+			.map(WiktionaryEntry::getSenses)
+			.stream()
+			.flatMap(Collection::stream)
+			.map(Sense::getSense)
+			.filter(StringUtils::isNotBlank)
+			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
+			.forEach(wordDefinitions::add);
+
+		Optional.of(entry)
+			.map(WiktionaryEntry::getSounds)
+			.stream()
+			.flatMap(Collection::stream)
+			.map(Sound::getIpa)
+			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
+			.forEach(wordDefinitions::add);
+		log.info("Have {} definitions for {} word {}", wordDefinitions.size(), entry.getWord(),
+			Optional.ofNullable(entry.getLang_code()).orElse(entry.getLang()));
+		return wd;
+	}
+
 	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
 		String baseName = "%s%s-%s".formatted(outputPrefix, langCodeFrom, langCodeTo);
 		// Build definitions map sorted by word
@@ -112,37 +137,11 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 			.mapToInt(e -> e.word().getBytes().length + 1 + 8)
 			.sum();
 
-		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : new File(baseName).getName();
+		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : "kaikki.org %s to %s dictionary".formatted(langCodeFrom, langCodeTo);
 		try (InfoFileWriter infoFileWriter = new InfoFileWriter(new FileWriter(baseName + ".ifo"))) {
 			infoFileWriter.write(
 				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL", LocalDate.now(), null,
 					DictType.WORDNET));
 		}
-	}
-
-	private static WordDefinition constructWordDefinition(WiktionaryEntry entry) {
-		WordDefinition wd = new WordDefinition();
-		wd.setWord(entry.getWord());
-
-		List<DefinitionEntry> wordDefinitions = wd.getDefinitions();
-		Optional.of(entry)
-			.map(WiktionaryEntry::getSenses)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sense::getSense)
-			.filter(StringUtils::isNotBlank)
-			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
-			.forEach(wordDefinitions::add);
-
-		Optional.of(entry)
-			.map(WiktionaryEntry::getSounds)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sound::getIpa)
-			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
-			.forEach(wordDefinitions::add);
-		log.info("Have {} definitions for {} word {}", wordDefinitions.size(), entry.getWord(),
-			Optional.ofNullable(entry.getLang_code()).orElse(entry.getLang()));
-		return wd;
 	}
 }

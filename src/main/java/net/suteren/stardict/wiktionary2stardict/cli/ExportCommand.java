@@ -21,7 +21,7 @@ import picocli.CommandLine;
 	@CommandLine.Option(names = { "-lt", "--lang-code-to" }, description = "Language code filter (e.g., 'cs', 'en')")
 	String langCodeTo;
 
-	@CommandLine.Option(names = { "-e", "--export-stardict" }, defaultValue = "dict", description = "Output prefix for StarDict files (without extension)")
+	@CommandLine.Option(names = { "-e", "--export-stardict" }, defaultValue = "dict_", description = "Output prefix for StarDict files (without extension)")
 	String exportPrefix;
 
 	@CommandLine.Option(names = { "-b", "--bookname" }, description = "Bookname for .ifo file")
