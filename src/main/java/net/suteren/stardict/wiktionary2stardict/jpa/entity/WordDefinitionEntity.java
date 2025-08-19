@@ -31,6 +31,6 @@ import lombok.Setter;
 	@Column private String type;
 	@Lob
 	@Column(columnDefinition = "CLOB") private String json;
-	@OneToMany(cascade = CascadeType.ALL) private Collection<SynonymumEntity> synonymums;
-	@OneToMany(cascade = CascadeType.ALL) private Collection<SenseEntity> senses;
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<SynonymumEntity> synonymums;
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) private Collection<SenseEntity> senses;
 }

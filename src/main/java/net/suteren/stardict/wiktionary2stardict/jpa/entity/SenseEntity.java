@@ -2,14 +2,13 @@ package net.suteren.stardict.wiktionary2stardict.jpa.entity;
 
 import java.util.UUID;
 
-import org.springframework.stereotype.Indexed;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,4 +26,5 @@ import lombok.Setter;
 	@GeneratedValue(strategy = GenerationType.UUID) @Column(nullable = false)
 	@Id private UUID id;
 	@Column(length = 1024) String word;
+	@ManyToOne private WordDefinitionEntity wordDefinition;
 }
