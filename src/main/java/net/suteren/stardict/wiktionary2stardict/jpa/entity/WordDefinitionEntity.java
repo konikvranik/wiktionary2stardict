@@ -16,7 +16,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(name = "definition", indexes = { @Index(columnList = "word"), @Index(columnList = "language"), @Index(columnList = "source") })
+@Table(name = "definition", indexes = { @Index(columnList = "word"), @Index(columnList = "language"), @Index(columnList = "source"),
+	@Index(columnList = "type") })
 @Getter @Setter
 @Entity public class WordDefinitionEntity {
 
@@ -27,6 +28,7 @@ import lombok.Setter;
 	@Column private String source;
 	@Column private String language;
 	@Column private String word;
+	@Column private String type;
 	@Lob
 	@Column(columnDefinition = "CLOB") private String json;
 	@ManyToMany(cascade = CascadeType.ALL) private Collection<SynonymumEntity> synonymums;

@@ -233,6 +233,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 			.orElse(entry.getLang());
 		wordDefinitionEntity.setLanguage(language);
 		wordDefinitionEntity.setWord(entry.getWord());
+		wordDefinitionEntity.setType(entry.getPos());
 		wordDefinitionEntity.setSenses(extractSenses(entry)
 		);
 		wordDefinitionEntity.setSynonymums(
