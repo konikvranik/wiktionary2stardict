@@ -3,8 +3,7 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,13 +24,20 @@ public class DictFileWriter implements AutoCloseable {
 	private final AtomicLong currentOffset = new AtomicLong(0);
 
 	public long writeEntry(String term, DefinitionEntry definitionEntry) throws IOException {
-		byte[] data = definitionEntry.getDefinition().getBytes(StandardCharsets.UTF_8);
-		writer.write(definitionEntry.getType().getType());
-		writer.write(0);
-		writer.write(data);
-		long size = 2 + data.length;
-		idxEntries.add(new IdxEntry(term, currentOffset.getAndAdd(size), size));
-		return size;
+		Optional<byte[]> db = Optional.ofNullable(definitionEntry)
+			.map(DefinitionEntry::getDefinition)
+			.map(d -> d.getBytes(StandardCharsets.UTF_8));
+		if (db.isPresent()) {
+			byte[] data = db.get();
+			writer.write(definitionEntry.getType().getType());
+			writer.write(0);
+			writer.write(data);
+			long size = 2 + data.length;
+			idxEntries.add(new IdxEntry(term, currentOffset.getAndAdd(size), size));
+			return size;
+		} else {
+			return 0;
+		}
 	}
 
 	@Override public void close() throws Exception {

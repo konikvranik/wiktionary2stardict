@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.time.LocalDate;
@@ -69,6 +70,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 	}
 
 	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
+		String baseName = "%s%s-%s".formatted(outputPrefix, langCodeFrom, langCodeTo);
 		// Build definitions map sorted by word
 		List<WordDefinition> definitions = new ArrayList<>();
 
@@ -87,7 +89,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 			definitions.add(constructWordDefinition(entry));
 		}
 		SortedSet<IdxEntry> sortedIdx;
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(outputPrefix + ".dict"))) {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(baseName + ".dict"))) {
 			// Write dict -> idx entries
 			for (WordDefinition wordDef : definitions) {
 				for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
@@ -97,7 +99,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 			sortedIdx = dictFileWriter.getIdxEntries();
 		}
 
-		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(outputPrefix + ".idx"))) {
+		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(baseName + ".idx"))) {
 			for (IdxEntry entry : sortedIdx) {
 				idxFileWriter.writeEntry(entry);
 			}
@@ -110,8 +112,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 			.mapToInt(e -> e.word().getBytes().length + 1 + 8)
 			.sum();
 
-		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : new java.io.File(outputPrefix).getName();
-		try (InfoFileWriter infoFileWriter = new InfoFileWriter(new FileWriter(outputPrefix + ".ifo"))) {
+		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : new File(baseName).getName();
+		try (InfoFileWriter infoFileWriter = new InfoFileWriter(new FileWriter(baseName + ".ifo"))) {
 			infoFileWriter.write(
 				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL", LocalDate.now(), null,
 					DictType.WORDNET));
