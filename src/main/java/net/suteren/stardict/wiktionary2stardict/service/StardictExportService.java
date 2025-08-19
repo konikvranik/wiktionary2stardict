@@ -1,14 +1,17 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,22 +44,37 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
-	public void export(String outputPrefix, String sametypesequence, String bookname) throws IOException {
-		List<LanguageCombinationEntity> languageCombinations = repository.findLanguageCombinations();
-		log.info("Exporting {} language combinations: {}", languageCombinations.size(), languageCombinations.stream()
-			.map(lc -> lc.from() + "->" + lc.to())
-			.collect(Collectors.joining(";")));
-		for (LanguageCombinationEntity lc : languageCombinations) {
-			export(outputPrefix, sametypesequence, bookname, lc.from(), lc.to());
+	@Transactional(readOnly = true)
+	public void export(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
+		if (langCodeFrom != null && langCodeTo != null) {
+			exportInternal(outputPrefix, bookname, langCodeFrom, langCodeTo);
+		} else {
+			List<LanguageCombinationEntity> languageCombinations;
+			if (langCodeFrom != null) {
+				languageCombinations = repository.findLanguageCombinations(langCodeFrom);
+			} else if (langCodeTo != null) {
+				languageCombinations = repository.findLanguageCombinations(langCodeTo);
+			} else {
+				languageCombinations = repository.findLanguageCombinations();
+			}
+			log.info("Exporting {} language combinations: {}", languageCombinations.size(), languageCombinations.stream()
+				.map(lc -> lc.from() + "->" + lc.to())
+				.collect(Collectors.joining(";")));
+
+			for (LanguageCombinationEntity lc : languageCombinations) {
+				exportInternal(outputPrefix, bookname, lc.from(), lc.to());
+			}
 		}
 	}
 
-	public void export(String outputPrefix, String sametypesequence, String bookname, String langCodeFrom, String langCodeTo) throws IOException {
+	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
 		// Build definitions map sorted by word
 		List<WordDefinition> definitions = new ArrayList<>();
 
 		List<TranslationEntity> all = repository.findAllTranslations(langCodeFrom, langCodeTo);
+		log.info("Found {} translations from {} to {}.", all.size(), langCodeFrom, langCodeTo);
 		for (TranslationEntity e : all) {
+			log.info("Processing {}", e.source().getWord());
 			WiktionaryEntry entry;
 			try {
 				entry = mapper.readValue(e.definition().getJson(), WiktionaryEntry.class);
@@ -67,29 +85,30 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 				continue;
 			definitions.add(constructWordDefinition(entry));
 		}
-
-		// Write dict -> idx entries
-		List<IdxEntry> idxEntries = DictFileWriter.writeDictFile(outputPrefix + ".dict", definitions, sametypesequence);
-
-		// Ensure idx order matches dict creation order (already insertion-order). For safety, sort both by word consistently
-		List<IdxEntry> sortedIdx = idxEntries.stream()
-			.sorted(Comparator.comparing(IdxEntry::word))
-			.toList();
-		// If sorted differs, we must rewrite dict accordingly. To keep minimal, rebuild dict if the original wasn't sorted
-		boolean different = !sortedIdx.equals(idxEntries);
-		if (different) {
-			// Rebuild dict using sorted definitions
-			definitions.sort(Comparator.naturalOrder());
-			idxEntries = DictFileWriter.writeDictFile(outputPrefix + ".dict", definitions, sametypesequence);
+		SortedSet<IdxEntry> sortedIdx;
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(outputPrefix + ".dict"))) {
+			// Write dict -> idx entries
+			for (WordDefinition wordDef : definitions) {
+				for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
+					dictFileWriter.writeEntry(wordDef.getWord(), definitionEntry);
+				}
+			}
+			sortedIdx = dictFileWriter.getIdxEntries();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 
-		// Write idx
-		IdxFileWriter.writeIdxFile(outputPrefix + ".idx", idxEntries);
+		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(outputPrefix + ".idx"))) {
+			// Write idx
 
+			for (IdxEntry entry : sortedIdx) {
+				idxFileWriter.writeEntry(entry);
+			}
+		}
 		// Build .ifo info
-		int wordcount = idxEntries.size();
+		int wordcount = sortedIdx.size();
 		int synwordcount = 0;
-		int idxfilesize = idxEntries.stream()
+		int idxfilesize = sortedIdx.stream()
 			.mapToInt(e -> e.word().getBytes().length + 1 + 8)
 			.sum();
 
@@ -116,16 +135,24 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		wd.setWord(entry.getWord());
 
 		List<DefinitionEntry> wordDefinitions = wd.getDefinitions();
-		entry.getSenses().stream()
+		Optional.of(entry)
+			.map(WiktionaryEntry::getSenses)
+			.stream()
+			.flatMap(Collection::stream)
 			.map(Sense::getSense)
 			.filter(StringUtils::isNotBlank)
 			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
 			.forEach(wordDefinitions::add);
 
-		entry.getSounds().stream()
+		Optional.of(entry)
+			.map(WiktionaryEntry::getSounds)
+			.stream()
+			.flatMap(Collection::stream)
 			.map(Sound::getIpa)
 			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
 			.forEach(wordDefinitions::add);
+		log.info("Have {} definitions for {} word {}", wordDefinitions.size(), entry.getWord(),
+			Optional.ofNullable(entry.getLang_code()).orElse(entry.getLang()));
 		return wd;
 	}
 }

@@ -1,24 +1,30 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Collection;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
+import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 
-public class IdxFileWriter {
+@RequiredArgsConstructor
+public class IdxFileWriter implements AutoCloseable {
+	private final OutputStream outputStream;
 
-	public static void writeIdxFile(String filename, Collection<IdxEntry> entries) throws IOException {
-		try (FileOutputStream fos = new FileOutputStream(filename);
-			FileChannel channel = fos.getChannel()) {
+	public void writeEntry(IdxEntry entry) throws IOException {
+		byte[] wordBytes = entry.word().getBytes(StandardCharsets.UTF_8);
+		ByteBuffer buffer = ByteBuffer.allocate(wordBytes.length + 1 + 8) // word + null terminator + 2x 32-bit int
+			.order(ByteOrder.BIG_ENDIAN);
+		buffer.put(wordBytes);        // UTF-8 encoded word
+		buffer.put((byte) 0);         // null terminator
+		buffer.putInt((int) entry.offset());        // offset in network byte order
+		buffer.putInt((int) entry.size());          // size in network byte order
+		outputStream.write(buffer.array());
+	}
 
-			for (IdxEntry entry : entries) {
-				byte[] entryBytes = entry.toBytes();
-				ByteBuffer buffer = ByteBuffer.wrap(entryBytes);
-				channel.write(buffer);
-			}
-		}
+	@Override public void close() throws Exception {
+		outputStream.close();
 	}
 }

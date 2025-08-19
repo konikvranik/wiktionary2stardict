@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.suteren.stardict.wiktionary2stardict.service.StardictExportService;
 import net.suteren.stardict.wiktionary2stardict.service.WiktionaryImportService;
 import picocli.CommandLine;
 
@@ -18,7 +17,6 @@ import picocli.CommandLine;
 @Component public class ImportCommand implements Runnable {
 
 	private final WiktionaryImportService importService;
-	private final StardictExportService exportService;
 
 	@CommandLine.Option(names = { "-i", "--import-jsonl" }, split = ",", description = "Path to Wiktionary JSONL file or directory")
 	Set<String> importPath;

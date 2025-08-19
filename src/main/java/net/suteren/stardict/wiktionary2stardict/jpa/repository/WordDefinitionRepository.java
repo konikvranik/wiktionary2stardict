@@ -13,14 +13,40 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 
 @Repository public interface WordDefinitionRepository extends JpaRepository<WordDefinitionEntity, UUID> {
 
-	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and exists (select l1 from e1.links l1 where l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word in (select l2.word from e2.links l2 where l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING))")
-	List<TranslationEntity> findAllTranslations(String fromLang, String toLAng);
+	@Query("""
+		select distinct e1, e2
+		from WordDefinitionEntity e1
+		join e1.links l1, WordDefinitionEntity e2
+		join e2.links l2
+		where e1.language = :fromLang
+		  and e2.language = :toLang
+		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
+		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
+		  and l1.word = l2.word
+		""")
+	List<TranslationEntity> findAllTranslations(String fromLang, String toLang);
 
-	@Query("select e1, e2 from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language = :fromLang and e2.language = :toLang and e1.word = :word and exists (select l1 from e1.links l1 where l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and  l1.word in (select l2.word from e2.links l2 where l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING))")
-	List<TranslationEntity> findTranslation(String fromLang, String toLAng, String word);
 
-	@Query("select e1.language, e2.language, count(e1.language) from WordDefinitionEntity e1, WordDefinitionEntity e2 where e1.language != e2.language and exists (select l1 from e1.links l1 where l1.type= net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word in (select l2.word from e2.links l2 where l2.type=net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING)) group by e1.language, e2.language")
+	@Query("""
+		select distinct e1, e2
+		from WordDefinitionEntity e1
+		join e1.links l1, WordDefinitionEntity e2
+		join e2.links l2
+		where e1.language = :fromLang
+		  and e2.language = :toLang
+		  and e1.word = :word
+		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
+		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
+		  and l1.word = l2.word
+		""")
+	List<TranslationEntity> findTranslation(String fromLang, String toLang, String word);
+
+
+	@Query("select l1.language, l2.language, count(*) from WordDefinitionLinkEntity l1, WordDefinitionLinkEntity l2 where l1.language != l2.language and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word = l2.word group by l1.language, l2.language")
 	List<LanguageCombinationEntity> findLanguageCombinations();
+
+	@Query("select l1.language, l2.language, count(*) from WordDefinitionLinkEntity l1, WordDefinitionLinkEntity l2 where l1.language = :language and l1.language != l2.language and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING and l1.word = l2.word group by l1.language, l2.language")
+	List<LanguageCombinationEntity> findLanguageCombinations(String language);
 
 	void deleteBySource(String source);
 

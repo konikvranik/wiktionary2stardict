@@ -1,9 +1,11 @@
 package net.suteren.stardict.wiktionary2stardict;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
@@ -27,7 +29,7 @@ public class StardictFileTest {
 	 *
 	 * @param args Argumenty příkazové řádky
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		try {
 			// Vytvoříme testovací data
 			List<WordDefinition> testData = createTestData();
@@ -40,12 +42,24 @@ public class StardictFileTest {
 
 			System.out.println("Zapisuji testovací data do souborů...");
 
+			SortedSet<IdxEntry> idxEntries;
 			// Zapíšeme .dict soubor a získáme .idx záznamy
-			List<IdxEntry> idxEntries = DictFileWriter.writeDictFile(dictFilename, testData, sameTypeSequence);
+			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename))) {
+				for (WordDefinition wordDef : testData) {
+					for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
+						dictFileWriter.writeEntry(wordDef.getWord(), definitionEntry);
+					}
+				}
+				idxEntries = dictFileWriter.getIdxEntries();
+			}
 
-			// Zapíšeme .idx soubor
-			IdxFileWriter.writeIdxFile(idxFilename, idxEntries);
+			try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(idxFilename))) {
+				// Zapíšeme .idx soubor
 
+				for (IdxEntry entry : idxEntries) {
+					idxFileWriter.writeEntry(entry);
+				}
+			}
 			// Vytvoříme a zapíšeme synonyma
 			List<SynonymumEntry> synEntries = createTestSynonyms(idxEntries);
 			SynFileWriter.writeSynFile(synFilename, synEntries);
@@ -188,7 +202,7 @@ public class StardictFileTest {
 	 * @param loadedSynonyms Načtená synonyma
 	 * @return true pokud data odpovídají, jinak false
 	 */
-	private static boolean verifyData(List< WordDefinition> originalData, Map<String, WordDefinition> loadedData,
+	private static boolean verifyData(List<WordDefinition> originalData, Map<String, WordDefinition> loadedData,
 		List<SynonymumEntry> originalSynonyms, List<SynonymumEntry> loadedSynonyms) {
 
 		// Ověříme počet záznamů
