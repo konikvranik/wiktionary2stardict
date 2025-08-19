@@ -62,7 +62,11 @@ public class StardictFileTest {
 			}
 			// Vytvoříme a zapíšeme synonyma
 			List<SynonymumEntry> synEntries = createTestSynonyms(idxEntries);
-			SynFileWriter.writeSynFile(synFilename, synEntries);
+			try (SynFileWriter synFileWriter = new SynFileWriter(new FileOutputStream(synFilename))) {
+				for (SynonymumEntry entry : synEntries) {
+					synFileWriter.writeEntry(entry);
+				}
+			}
 
 			System.out.println("Zápis dokončen.");
 
@@ -155,7 +159,7 @@ public class StardictFileTest {
 	 * @param idxEntries Seznam idx záznamů
 	 * @return Seznam synonym
 	 */
-	private static List<SynonymumEntry> createTestSynonyms(List<IdxEntry> idxEntries) {
+	private static List<SynonymumEntry> createTestSynonyms(SortedSet<IdxEntry> idxEntries) {
 		List<SynonymumEntry> synonyms = new ArrayList<>();
 
 		// Najdeme indexy slov v idx záznamech
@@ -163,8 +167,8 @@ public class StardictFileTest {
 		int bananaIndex = -1;
 		int orangeIndex = -1;
 
-		for (int i = 0; i < idxEntries.size(); i++) {
-			IdxEntry entry = idxEntries.get(i);
+		int i = 0;
+		for (IdxEntry entry : idxEntries) {
 			if ("apple".equals(entry.word())) {
 				appleIndex = i;
 			} else if ("banana".equals(entry.word())) {
@@ -172,6 +176,7 @@ public class StardictFileTest {
 			} else if ("orange".equals(entry.word())) {
 				orangeIndex = i;
 			}
+			i++;
 		}
 
 		// Přidáme synonyma

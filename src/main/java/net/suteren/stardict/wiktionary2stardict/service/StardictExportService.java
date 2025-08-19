@@ -1,6 +1,7 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,17 +95,14 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 				}
 			}
 			sortedIdx = dictFileWriter.getIdxEntries();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 
 		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(outputPrefix + ".idx"))) {
-			// Write idx
-
 			for (IdxEntry entry : sortedIdx) {
 				idxFileWriter.writeEntry(entry);
 			}
 		}
+
 		// Build .ifo info
 		int wordcount = sortedIdx.size();
 		int synwordcount = 0;
@@ -113,21 +111,11 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 			.sum();
 
 		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : new java.io.File(outputPrefix).getName();
-		InfoFile info = new InfoFile(
-			usedBookname,
-			wordcount,
-			synwordcount,
-			idxfilesize,
-			32,
-			null,
-			null,
-			null,
-			"Generated from Wiktionary JSONL",
-			LocalDate.now(),
-			null,
-			DictType.WORDNET
-		);
-		InfoFileWriter.write(outputPrefix + ".ifo", info);
+		try (InfoFileWriter infoFileWriter = new InfoFileWriter(new FileWriter(outputPrefix + ".ifo"))) {
+			infoFileWriter.write(
+				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL", LocalDate.now(), null,
+					DictType.WORDNET));
+		}
 	}
 
 	private static WordDefinition constructWordDefinition(WiktionaryEntry entry) {

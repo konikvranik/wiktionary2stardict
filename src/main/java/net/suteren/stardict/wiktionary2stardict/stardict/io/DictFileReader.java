@@ -36,10 +36,10 @@ public class DictFileReader {
 
             for (IdxEntry entry : idxEntries) {
                 // Set the position in the buffer according to the offset in the idx record
-                buffer.position(entry.offset());
+                buffer.position((int) entry.offset());
                 
                 // Load the word definition
-                WordDefinition wordDef = WordDefinition.fromBytes(buffer, entry.size(), sameTypeSequence);
+                WordDefinition wordDef = WordDefinition.fromBytes(buffer, (int) entry.size(), sameTypeSequence);
                 wordDef.setWord(entry.word());
                 
                 definitions.put(entry.word(), wordDef);
@@ -62,7 +62,7 @@ public class DictFileReader {
              FileChannel channel = fis.getChannel()) {
 
             // Allocate buffer only for the size of the word definition
-            ByteBuffer buffer = ByteBuffer.allocate(entry.size());
+            ByteBuffer buffer = ByteBuffer.allocate((int) entry.size());
             
             // Set the position in the file according to the offset in the idx record
             channel.position(entry.offset());
@@ -72,7 +72,7 @@ public class DictFileReader {
             buffer.flip();
             
             // Create the word definition
-            WordDefinition wordDef = WordDefinition.fromBytes(buffer, entry.size(), sameTypeSequence);
+            WordDefinition wordDef = WordDefinition.fromBytes(buffer, (int) entry.size(), sameTypeSequence);
             wordDef.setWord(entry.word());
             
             return wordDef;
