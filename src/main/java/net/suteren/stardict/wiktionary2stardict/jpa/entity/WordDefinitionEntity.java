@@ -11,7 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +31,6 @@ import lombok.Setter;
 	@Column private String type;
 	@Lob
 	@Column(columnDefinition = "CLOB") private String json;
-	@ManyToMany(cascade = CascadeType.ALL) private Collection<SynonymumEntity> synonymums;
-	@ManyToMany(cascade = CascadeType.ALL) private Collection<SenseEntity> senses;
+	@OneToMany(cascade = CascadeType.ALL) private Collection<SynonymumEntity> synonymums;
+	@OneToMany(cascade = CascadeType.ALL) private Collection<SenseEntity> senses;
 }

@@ -20,14 +20,14 @@ import picocli.CommandLine;
 	private final WiktionaryImportService importService;
 	private final StardictExportService exportService;
 
-	@CommandLine.Option(names = { "-i", "--import-jsonl" }, description = "Path to Wiktionary JSONL file or directory")
-	String importPath;
+	@CommandLine.Option(names = { "-i", "--import-jsonl" }, split = ",", description = "Path to Wiktionary JSONL file or directory")
+	Set<String> importPath;
 
 	@CommandLine.Option(names = { "-d",
 		"--download-langs" }, split = ",", description = "Comma-separated Kaikki language names to download and import (e.g., 'Czech,Italian,Serbo-Croatian')")
 	String[] downloadLangs;
 
-	@CommandLine.Option(names = { "-c", "--cleanup" }, arity = "*", split = ",",defaultValue = "Set.of()", description = "Comma-separated sources to delete")
+	@CommandLine.Option(names = { "-c", "--cleanup" }, arity = "*", split = ",", description = "Comma-separated sources to delete")
 	Set<String> cleanupSources;
 
 	@Override
@@ -46,9 +46,11 @@ import picocli.CommandLine;
 				log.info("Downloaded and imported entries: {} (total imported: {})", dlImported, imported);
 			}
 
-			if (importPath != null && !importPath.isBlank()) {
-				imported += importService.importJsonlPath(importPath);
-				log.info("Imported entries: {}", imported);
+			if (importPath != null && !importPath.isEmpty()) {
+				for (String path : importPath) {
+					imported += importService.importJsonlPath(path);
+					log.info("Imported entries: {}", imported);
+				}
 			}
 		} catch (Exception ex) {
 			log.error("Error occurred during CLI execution", ex);
