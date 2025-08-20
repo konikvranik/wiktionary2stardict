@@ -3,18 +3,14 @@ package net.suteren.stardict.wiktionary2stardict.stardict.files;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-
-import org.springframework.util.comparator.Comparators;
+import java.util.Objects;
 
 public record IdxEntry(String word, long offset, long size) implements Comparable<IdxEntry> {
 	@Override public int compareTo(IdxEntry o) {
 		if (o == null) {
 			return 1;
 		}
-		if (word == null) {
-			return -1;
-		}
-		return word.compareTo(o.word);
+		return Objects.compare(word, o.word(), String::compareTo);
 	}
 
 	/**

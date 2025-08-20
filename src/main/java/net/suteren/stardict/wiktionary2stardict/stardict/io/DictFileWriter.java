@@ -1,17 +1,20 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
 
 /**
  * Class for writing StarDict .dict files
@@ -19,28 +22,55 @@ import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 @RequiredArgsConstructor
 public class DictFileWriter implements AutoCloseable {
 
-	@Getter private final SortedSet<IdxEntry> idxEntries = new TreeSet<>();
-	private final OutputStream writer;
+	@Getter private final List<IdxEntry> idxEntries = new ArrayList<>();
+	private final OutputStream outputStream;
 	private final AtomicLong currentOffset = new AtomicLong(0);
 
-	public long writeEntry(String term, DefinitionEntry definitionEntry) throws IOException {
-		Optional<byte[]> db = Optional.ofNullable(definitionEntry)
+	public static List<IdxEntry> writeDefinitionFile(String baseName, List<WordDefinition> definitions) throws Exception {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream("%s.dict".formatted(baseName)))) {
+			// Write dict -> idx entries
+			for (WordDefinition wordDef : definitions) {
+				dictFileWriter.writeWordDefinition(wordDef);
+			}
+			return dictFileWriter.getIdxEntries();
+		}
+	}
+
+	public int writeWordDefinition(WordDefinition wordDef) throws IOException {
+		int size = 0;
+		for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
+			size += writeEntry(definitionEntry);
+		}
+		idxEntries.add(new IdxEntry(wordDef.getWord(), currentOffset.get(), size));
+		return size;
+	}
+
+	private int writeEntry(DefinitionEntry definitionEntry) throws IOException {
+		Optional<byte[]> definitionBytes = Optional.ofNullable(definitionEntry)
 			.map(DefinitionEntry::getDefinition)
 			.map(d -> d.getBytes(StandardCharsets.UTF_8));
-		if (db.isPresent()) {
-			byte[] data = db.get();
-			writer.write(definitionEntry.getType().getType());
-			writer.write(0);
-			writer.write(data);
-			long size = 2 + data.length;
-			idxEntries.add(new IdxEntry(term, currentOffset.getAndAdd(size), size));
-			return size;
+		if (definitionBytes.isPresent()) {
+			byte[] data = definitionBytes.get();
+			outputStream.write(definitionEntry.getType().getType());
+			return writeDataOfType(definitionEntry.getType(), data) + 1;
 		} else {
 			return 0;
 		}
 	}
 
+	private int writeDataOfType(EntryType type, byte[] data) throws IOException {
+		if (type.isString()) {
+			outputStream.write(data);
+			outputStream.write(0);
+			return data.length + 1;
+		} else {
+			outputStream.write(StardictUtils.toBytes(data.length, 32, true));
+			outputStream.write(data);
+			return data.length + 32 / Byte.SIZE;
+		}
+	}
+
 	@Override public void close() throws Exception {
-		writer.close();
+		outputStream.close();
 	}
 }

@@ -1,13 +1,12 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,10 +28,12 @@ import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.InfoFile;
+import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileWriter;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.IdxFileWriter;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
+import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 
 @Slf4j
 @Service public class StardictExportService {
@@ -68,32 +69,6 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		}
 	}
 
-	private static WordDefinition constructWordDefinition(WiktionaryEntry entry) {
-		WordDefinition wd = new WordDefinition();
-		wd.setWord(entry.getWord());
-
-		List<DefinitionEntry> wordDefinitions = wd.getDefinitions();
-		Optional.of(entry)
-			.map(WiktionaryEntry::getSenses)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sense::getSense)
-			.filter(StringUtils::isNotBlank)
-			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
-			.forEach(wordDefinitions::add);
-
-		Optional.of(entry)
-			.map(WiktionaryEntry::getSounds)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sound::getIpa)
-			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
-			.forEach(wordDefinitions::add);
-		log.info("Have {} definitions for {} word {}", wordDefinitions.size(), entry.getWord(),
-			Optional.ofNullable(entry.getLang_code()).orElse(entry.getLang()));
-		return wd;
-	}
-
 	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
 		String baseName = "%s%s-%s".formatted(outputPrefix, langCodeFrom, langCodeTo);
 		// Build definitions map sorted by word
@@ -102,37 +77,70 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		List<TranslationEntity> all = repository.findAllTranslations(langCodeFrom, langCodeTo);
 		log.info("Found {} translations from {} to {}.", all.size(), langCodeFrom, langCodeTo);
 		for (TranslationEntity e : all) {
-			log.info("Processing {}", e.source().getWord());
-			WiktionaryEntry entry;
-			try {
-				entry = mapper.readValue(e.definition().getJson(), WiktionaryEntry.class);
-			} catch (Exception ex) {
-				continue; // skip malformed stored entries
-			}
-			if (StringUtils.isBlank(e.source().getWord()))
+			WordDefinition e1 = constructWordDefinition(e);
+			if (e1 == null)
 				continue;
-			definitions.add(constructWordDefinition(entry));
+			definitions.add(e1);
 		}
-		SortedSet<IdxEntry> sortedIdx;
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(baseName + ".dict"))) {
-			// Write dict -> idx entries
-			for (WordDefinition wordDef : definitions) {
-				for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
-					dictFileWriter.writeEntry(wordDef.getWord(), definitionEntry);
-				}
-			}
-			sortedIdx = dictFileWriter.getIdxEntries();
-		}
+		List<IdxEntry> sortedIdx = DictFileWriter.writeDefinitionFile(baseName, definitions);
+		Collections.sort(sortedIdx);
+		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx);
+		Collections.sort(sortedSyn);
+		SynFileWriter.writeSynFile(baseName, sortedSyn);
+		writeIfoFile(bookname, langCodeFrom, langCodeTo, sortedIdx, sortedSyn, baseName);
+	}
 
-		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(baseName + ".idx"))) {
-			for (IdxEntry entry : sortedIdx) {
-				idxFileWriter.writeEntry(entry);
-			}
-		}
+	private WordDefinition constructWordDefinition(TranslationEntity e) {
 
-		// Build .ifo info
+		log.info("Processing {}", e.source().getWord());
+		WiktionaryEntry wiktionaryEntry = parseWiktionaryEntry(e);
+		if (wiktionaryEntry == null) {return null;}
+
+		WordDefinition wd = new WordDefinition();
+		wd.setWord(e.source().getWord());
+
+		wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord()));
+
+		Optional.of(wiktionaryEntry)
+			.map(WiktionaryEntry::getSenses)
+			.stream()
+			.flatMap(Collection::stream)
+			.map(Sense::getSense)
+			.filter(StringUtils::isNotBlank)
+			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
+			.forEach(wd.getDefinitions()::add);
+
+		Optional.of(wiktionaryEntry)
+			.map(WiktionaryEntry::getSounds)
+			.stream()
+			.flatMap(Collection::stream)
+			.map(Sound::getIpa)
+			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
+			.forEach(wd.getDefinitions()::add);
+
+		log.info("Have {} definitions for {} word {}", wd.getDefinitions().size(), wiktionaryEntry.getWord(),
+			Optional.ofNullable(wiktionaryEntry.getLang_code()).orElse(wiktionaryEntry.getLang()));
+
+		return wd;
+	}
+
+	private WiktionaryEntry parseWiktionaryEntry(TranslationEntity e) {
+		WiktionaryEntry entry;
+		try {
+			entry = mapper.readValue(e.definition().getJson(), WiktionaryEntry.class);
+		} catch (Exception ex) {
+			return null;
+		}
+		if (StringUtils.isBlank(e.source().getWord())) {
+			return null;
+		}
+		return entry;
+	}
+
+	private static void writeIfoFile(String bookname, String langCodeFrom, String langCodeTo, List<IdxEntry> sortedIdx, List<SynonymumEntry> sortedSyn,
+		String baseName) throws Exception {
 		int wordcount = sortedIdx.size();
-		int synwordcount = 0;
+		int synwordcount = sortedSyn.size();
 		int idxfilesize = sortedIdx.stream()
 			.mapToInt(e -> e.word().getBytes().length + 1 + 8)
 			.sum();
@@ -140,8 +148,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.InfoFileWriter;
 		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : "kaikki.org %s to %s dictionary".formatted(langCodeFrom, langCodeTo);
 		try (InfoFileWriter infoFileWriter = new InfoFileWriter(new FileWriter(baseName + ".ifo"))) {
 			infoFileWriter.write(
-				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL", LocalDate.now(), null,
-					DictType.WORDNET));
+				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL",
+					LocalDate.now(), null, DictType.WORDNET));
 		}
 	}
 }

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
@@ -42,13 +41,11 @@ public class StardictFileTest {
 
 			System.out.println("Zapisuji testovací data do souborů...");
 
-			SortedSet<IdxEntry> idxEntries;
+			List<IdxEntry> idxEntries;
 			// Zapíšeme .dict soubor a získáme .idx záznamy
 			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename))) {
 				for (WordDefinition wordDef : testData) {
-					for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
-						dictFileWriter.writeEntry(wordDef.getWord(), definitionEntry);
-					}
+					dictFileWriter.writeWordDefinition(wordDef);
 				}
 				idxEntries = dictFileWriter.getIdxEntries();
 			}
@@ -159,7 +156,7 @@ public class StardictFileTest {
 	 * @param idxEntries Seznam idx záznamů
 	 * @return Seznam synonym
 	 */
-	private static List<SynonymumEntry> createTestSynonyms(SortedSet<IdxEntry> idxEntries) {
+	private static List<SynonymumEntry> createTestSynonyms(List<IdxEntry> idxEntries) {
 		List<SynonymumEntry> synonyms = new ArrayList<>();
 
 		// Najdeme indexy slov v idx záznamech

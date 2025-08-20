@@ -11,4 +11,8 @@ public enum EntryType {
 	EntryType(char type) {
 		this.type = type;
 	}
+
+	public boolean isString() {
+		return Character.isLowerCase(type);
+	}
 }

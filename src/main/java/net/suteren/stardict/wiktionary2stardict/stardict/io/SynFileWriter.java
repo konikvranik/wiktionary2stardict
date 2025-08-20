@@ -1,10 +1,10 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
@@ -17,6 +17,14 @@ public class SynFileWriter implements AutoCloseable {
 
 	private final OutputStream outputStream;
 
+	public static void writeSynFile(String baseName, List<SynonymumEntry> idxEntries) throws Exception {
+		try (SynFileWriter synFileWriter = new SynFileWriter(new FileOutputStream("%s.syn".formatted(baseName)))) {
+			for (SynonymumEntry entry : idxEntries) {
+				synFileWriter.writeEntry(entry);
+			}
+		}
+	}
+
 	/**
 	 * Converts a synonym record to a byte array
 	 *
@@ -26,12 +34,9 @@ public class SynFileWriter implements AutoCloseable {
 	public int writeEntry(SynonymumEntry entry) throws IOException {
 		byte[] wordBytes = entry.word().getBytes(StandardCharsets.UTF_8);
 		int size = wordBytes.length + 1 + 4;
-		ByteBuffer buffer = ByteBuffer.allocate(size); // word + null terminator + 32-bit int
-		buffer.put(wordBytes);        // UTF-8 encoded word
-		buffer.put((byte) 0);         // null terminator
-		buffer.putInt(entry.indexPosition()); // index position in network byte order
-		buffer.order(ByteOrder.BIG_ENDIAN);
-		outputStream.write(buffer.array());
+		outputStream.write(wordBytes);
+		outputStream.write(0);
+		outputStream.write(StardictUtils.toBytes(entry.indexPosition(), 32, true));
 		return size;
 	}
 

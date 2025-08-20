@@ -24,7 +24,9 @@ public class InfoFileWriter implements AutoCloseable {
 		writer.write("version=2.4.2\n");
 		writer.write("bookname=" + sanitize(info.bookname()) + "\n");
 		writer.write("wordcount=" + info.wordcount() + "\n");
-		writer.write("synwordcount=" + info.synwordcount() + "\n");
+		if (info.synwordcount() > 0) {
+			writer.write("synwordcount=" + info.synwordcount() + "\n");
+		}
 		writer.write("idxfilesize=" + info.idxfilesize() + "\n");
 
 		// Optional fields
