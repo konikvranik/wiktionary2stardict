@@ -99,35 +99,16 @@ public class StardictIoUtil {
 	 * @throws IllegalArgumentException pokud size není v rozsahu 1..8
 	 */
 	public static byte[] toBytes(long value, int sizeInBits, boolean networkByteOrder) {
-		if (sizeInBits < 1 || sizeInBits > Long.SIZE) {
-			throw new IllegalArgumentException("size must be between 1 and 8");
+		if (sizeInBits != Long.SIZE && sizeInBits != Integer.SIZE) {
+			throw new IllegalArgumentException("size must be either 32 or 64, got %d.".formatted(sizeInBits));
 		}
-		if (true) {
-			ByteBuffer buffer = ByteBuffer.allocate(sizeInBits / Byte.SIZE)
-				.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder());
-			if (sizeInBits == Long.SIZE) {
-				buffer.putLong(value);
-			} else {
-				buffer.putInt((int) value);
-			}
-			return buffer.array();
+		ByteBuffer buffer = ByteBuffer.allocate(sizeInBits / Byte.SIZE)
+			.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder());
+		if (sizeInBits == Long.SIZE) {
+			buffer.putLong(value);
 		} else {
-			ByteOrder order = networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder();
-			int sizeInBytes = sizeInBits / Byte.SIZE;
-			byte[] out = new byte[sizeInBytes];
-
-			if (order == ByteOrder.BIG_ENDIAN) {
-				for (int i = 0; i < sizeInBytes; i++) {
-					int shift = (sizeInBytes - 1 - i) * 8;
-					out[i] = (byte) (value >>> shift);
-				}
-			} else { // LITTLE_ENDIAN
-				for (int i = 0; i < sizeInBytes; i++) {
-					int shift = i * 8;
-					out[i] = (byte) (value >>> shift);
-				}
-			}
-			return out;
+			buffer.putInt((int) value);
 		}
+		return buffer.array();
 	}
 }

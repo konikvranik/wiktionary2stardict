@@ -1,22 +1,44 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
+import net.suteren.stardict.wiktionary2stardict.stardict.DictType;
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.InfoFile;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 /**
  * Writes StarDict .ifo file.
  */
 @RequiredArgsConstructor
-public class InfoFileWriter implements AutoCloseable {
+public class IfoFileWriter implements AutoCloseable {
 
 	private final Writer writer;
+
+	public static void writeIfoFile(String bookname, String langCodeFrom, String langCodeTo, List<IdxEntry> sortedIdx, List<SynonymumEntry> sortedSyn,
+		String baseName) throws Exception {
+		int wordcount = sortedIdx.size();
+		int synwordcount = sortedSyn.size();
+		int idxfilesize = sortedIdx.stream()
+			.mapToInt(e -> e.word().getBytes().length + 1 + 8)
+			.sum();
+
+		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : "kaikki.org %s to %s dictionary".formatted(langCodeFrom, langCodeTo);
+		try (IfoFileWriter ifoFileWriter = new IfoFileWriter(new FileWriter(baseName + ".ifo"))) {
+			ifoFileWriter.write(
+				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL",
+					LocalDate.now(), null, DictType.WORDNET));
+		}
+	}
 
 	public void write(InfoFile info) throws IOException {
 		// Required fields

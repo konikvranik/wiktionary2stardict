@@ -20,6 +20,8 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 		join e2.links l2
 		where e1.language = :fromLang
 		  and e2.language = :toLang
+		  and e1.type = e2.type
+		  and e1.type != 'name'
 		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
 		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
 		  and l1.word = l2.word
@@ -34,6 +36,8 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 		join e2.links l2
 		where e1.language = :fromLang
 		  and e2.language = :toLang
+		  and e1.type = e2.type
+		  and e1.type != 'name'
 		  and e1.word = :word
 		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
 		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
