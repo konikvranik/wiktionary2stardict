@@ -1,5 +1,8 @@
 package net.suteren.stardict.wiktionary2stardict;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -12,9 +15,6 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.cli.MainCommand;
 import picocli.CommandLine;
-// ... existing code ...
-import java.util.Arrays;
-import java.util.stream.IntStream;
 // ... existing code ...
 
 @SpringBootApplication public class Wiktionary2stardictApplication implements ApplicationRunner, ExitCodeGenerator {

@@ -18,8 +18,11 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(name = "definition", indexes = { @Index(columnList = "word", name = "idx_definition_word"), @Index(columnList = "language", name = "idx_definition_language"),
-	@Index(columnList = "source", name = "idx_definition_source"), @Index(columnList = "type", name = "idx_definition_type") })
+@Table(name = "definition", indexes = {
+	@Index(columnList = "word", name = "idx_definition_word"),
+	@Index(columnList = "language", name = "idx_definition_language"),
+	@Index(columnList = "source", name = "idx_definition_source"),
+	@Index(columnList = "type", name = "idx_definition_type") })
 @Getter @Setter
 @Entity public class WordDefinitionEntity {
 

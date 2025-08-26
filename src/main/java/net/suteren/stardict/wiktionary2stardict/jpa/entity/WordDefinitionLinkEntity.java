@@ -23,7 +23,8 @@ import lombok.Setter;
 		@Index(columnList = "type", name = "idx_link_type"),
 		@Index(columnList = "language", name = "idx_link_language"),
 		@Index(columnList = "word_definition_id,type", name = "idx_link_def_type"),
-		@Index(columnList = "type,word", name = "idx_link_type_word")
+		@Index(columnList = "type,word", name = "idx_link_type_word"),
+		@Index(columnList = "type,word,language", name = "idx_link_type_word_language")
 	}
 )
 @Getter @Setter

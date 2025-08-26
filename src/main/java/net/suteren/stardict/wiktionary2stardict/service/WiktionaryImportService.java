@@ -54,6 +54,7 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 	private static final URI KAAKKI_DICTIONARY_ROOT = URI.create("https://kaikki.org/dictionary/");
 	private static final Pattern LANG_PATTERN = Pattern.compile("(.*\\S)\\s*\\(\\s*\\d+\\s*(?:senses\\s*)?\\)\\s*$");
 	private static final Pattern LANG_URL_PATTERN = Pattern.compile("^/dictionary(/[^/]+(/(?:index.html)?)?)$");
+	private static final Pattern EXPLANATION_PATTERN = Pattern.compile("^(.*\\S)\\s*\\(.*\\)$");
 
 	public WiktionaryImportService(WordDefinitionRepository repository) {
 		this.repository = repository;
@@ -236,9 +237,10 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 		wordDefinitionEntity.setType(entry.getPos());
 		wordDefinitionEntity.setLinks(extractSenses(entry, language));
 		wordDefinitionEntity.setJson(line);
-		if (wordDefinitionEntity.getWord() != null)
+		if (wordDefinitionEntity.getWord() != null) {
 			repository.save(wordDefinitionEntity);
-		log.info("Imported {} from {}", entry.getWord(), file.getName());
+		}
+		log.debug("Imported {} from {}", entry.getWord(), file.getName());
 		return false;
 	}
 
@@ -249,17 +251,27 @@ import net.suteren.stardict.wiktionary2stardict.model.WiktionaryEntry;
 						.stream()
 						.flatMap(Collection::stream)
 						.map(Synonym::getWord)
+						.flatMap(WiktionaryImportService::cleanupTheMeaning)
 						.filter(Objects::nonNull)
 						.map(s -> new WordDefinitionLinkEntity(s, language, LinkType.SYNONYMUM)),
 					entry.getSenses().stream()
 						.map(Sense::getGlosses)
 						.filter(Objects::nonNull)
-						.flatMap(Collection::stream)
+						.flatMap(strings -> strings.stream().flatMap(WiktionaryImportService::cleanupTheMeaning))
 						.filter(Objects::nonNull)
 						.map(s -> new WordDefinitionLinkEntity(s, language, LinkType.MEANING)))
 				.collect(Collectors.toSet());
 		} catch (NullPointerException e) {
 			throw e;
+		}
+	}
+
+	private static Stream<String> cleanupTheMeaning(String word) {
+		Matcher m = EXPLANATION_PATTERN.matcher(word);
+		if (m.matches()) {
+			return Stream.of(word, m.group(1));
+		} else {
+			return Stream.of(word);
 		}
 	}
 

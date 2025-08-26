@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -70,15 +71,19 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		// Build definitions map sorted by word
 		List<WordDefinition> definitions = new ArrayList<>();
 
-		List<TranslationEntity> all = repository.findAllTranslations(langCodeFrom, langCodeTo);
-		log.info("Found {} translations from {} to {}.", all.size(), langCodeFrom, langCodeTo);
-		for (TranslationEntity e : all) {
-			WordDefinition e1 = constructWordDefinition(e);
-			if (e1 == null)
-				continue;
-			definitions.add(e1);
+		List<TranslationEntity> allTranslations = repository.findAllTranslations(langCodeFrom, langCodeTo);
+		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
+		List<IdxEntry> sortedIdx;
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream("%s.dict".formatted(baseName)))) {
+			for (TranslationEntity translationEntity : allTranslations) {
+				WordDefinition wordDefinition = constructWordDefinition(translationEntity);
+				if (wordDefinition == null)
+					continue;
+				dictFileWriter.writeWordDefinition(wordDefinition);
+				definitions.add(wordDefinition);
+			}
+			sortedIdx = dictFileWriter.getIdxEntries();
 		}
-		List<IdxEntry> sortedIdx = DictFileWriter.writeDefinitionFile(baseName, definitions);
 		Collections.sort(sortedIdx);
 		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx);
 		Collections.sort(sortedSyn);
