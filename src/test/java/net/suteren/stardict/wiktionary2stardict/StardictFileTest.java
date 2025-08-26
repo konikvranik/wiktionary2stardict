@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.DefinitionEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileReader;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.DictFileWriter;
 import net.suteren.stardict.wiktionary2stardict.stardict.io.IdxFileReader;

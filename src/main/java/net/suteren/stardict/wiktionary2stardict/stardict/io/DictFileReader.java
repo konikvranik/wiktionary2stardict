@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 
 /**
  * Class for reading StarDict .dict files

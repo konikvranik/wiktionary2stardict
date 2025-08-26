@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 @RequiredArgsConstructor
 public class IdxFileWriter implements AutoCloseable {

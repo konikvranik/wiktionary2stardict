@@ -1,4 +1,4 @@
-package net.suteren.stardict.wiktionary2stardict.stardict.files;
+package net.suteren.stardict.wiktionary2stardict.stardict.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

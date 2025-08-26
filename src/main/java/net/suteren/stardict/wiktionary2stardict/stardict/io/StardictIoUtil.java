@@ -46,9 +46,10 @@ public class StardictIoUtil {
 	public static String utf8BytesToString(byte[] bytes) {
 		return new String(bytes, StandardCharsets.UTF_8);
 	}
-	
+
 	/**
 	 * Reads a null-terminated UTF-8 string from ByteBuffer
+	 *
 	 * @param buffer ByteBuffer containing data
 	 * @return The read string
 	 */
@@ -60,9 +61,10 @@ public class StardictIoUtil {
 		}
 		return new String(sb.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
 	}
-	
+
 	/**
 	 * Writes a null-terminated UTF-8 string to ByteBuffer
+	 *
 	 * @param buffer ByteBuffer for writing
 	 * @param str String to write
 	 */
@@ -71,9 +73,10 @@ public class StardictIoUtil {
 		buffer.put(bytes);
 		buffer.put((byte) 0); // null terminator
 	}
-	
+
 	/**
 	 * Creates a ByteBuffer with a null-terminated UTF-8 string
+	 *
 	 * @param str String to write
 	 * @return ByteBuffer containing the string and null terminator
 	 */
@@ -84,5 +87,47 @@ public class StardictIoUtil {
 		buffer.put((byte) 0); // null terminator
 		buffer.flip();
 		return buffer;
+	}
+
+	/**
+	 * Převede hodnotu (two's complement) do byte[] o dané velikosti.
+	 *
+	 * @param value hodnota k převodu
+	 * @param sizeInBits počet bajtů v cílovém poli (1..8)
+	 * @param networkByteOrder true = network order (big-endian), false = machine order (ByteOrder.nativeOrder())
+	 * @return pole bajtů délky size
+	 * @throws IllegalArgumentException pokud size není v rozsahu 1..8
+	 */
+	public static byte[] toBytes(long value, int sizeInBits, boolean networkByteOrder) {
+		if (sizeInBits < 1 || sizeInBits > Long.SIZE) {
+			throw new IllegalArgumentException("size must be between 1 and 8");
+		}
+		if (true) {
+			ByteBuffer buffer = ByteBuffer.allocate(sizeInBits / Byte.SIZE)
+				.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder());
+			if (sizeInBits == Long.SIZE) {
+				buffer.putLong(value);
+			} else {
+				buffer.putInt((int) value);
+			}
+			return buffer.array();
+		} else {
+			ByteOrder order = networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder();
+			int sizeInBytes = sizeInBits / Byte.SIZE;
+			byte[] out = new byte[sizeInBytes];
+
+			if (order == ByteOrder.BIG_ENDIAN) {
+				for (int i = 0; i < sizeInBytes; i++) {
+					int shift = (sizeInBytes - 1 - i) * 8;
+					out[i] = (byte) (value >>> shift);
+				}
+			} else { // LITTLE_ENDIAN
+				for (int i = 0; i < sizeInBytes; i++) {
+					int shift = i * 8;
+					out[i] = (byte) (value >>> shift);
+				}
+			}
+			return out;
+		}
 	}
 }

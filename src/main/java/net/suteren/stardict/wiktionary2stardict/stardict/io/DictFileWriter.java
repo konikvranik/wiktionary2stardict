@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.DefinitionEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.WordDefinition;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.DefinitionEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 
 /**
  * Class for writing StarDict .dict files
@@ -64,7 +64,7 @@ public class DictFileWriter implements AutoCloseable {
 			outputStream.write(0);
 			return data.length + 1;
 		} else {
-			outputStream.write(StardictUtils.toBytes(data.length, 32, true));
+			outputStream.write(StardictIoUtil.toBytes(data.length, 32, true));
 			outputStream.write(data);
 			return data.length + 32 / Byte.SIZE;
 		}

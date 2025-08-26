@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 /**
  * Class for reading StarDict .syn files

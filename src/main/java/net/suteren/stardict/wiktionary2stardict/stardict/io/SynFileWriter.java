@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.SynonymumEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 /**
  * Class for writing StarDict .syn files
@@ -36,7 +36,7 @@ public class SynFileWriter implements AutoCloseable {
 		int size = wordBytes.length + 1 + 4;
 		outputStream.write(wordBytes);
 		outputStream.write(0);
-		outputStream.write(StardictUtils.toBytes(entry.indexPosition(), 32, true));
+		outputStream.write(StardictIoUtil.toBytes(entry.indexPosition(), 32, true));
 		return size;
 	}
 

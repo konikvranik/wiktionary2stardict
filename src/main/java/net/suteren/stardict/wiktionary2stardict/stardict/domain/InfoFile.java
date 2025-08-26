@@ -1,4 +1,4 @@
-package net.suteren.stardict.wiktionary2stardict.stardict.files;
+package net.suteren.stardict.wiktionary2stardict.stardict.domain;
 
 import java.time.LocalDate;
 import java.util.Collection;

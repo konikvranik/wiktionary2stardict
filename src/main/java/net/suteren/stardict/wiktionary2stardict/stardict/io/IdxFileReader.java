@@ -7,7 +7,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.suteren.stardict.wiktionary2stardict.stardict.files.IdxEntry;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 
 public class IdxFileReader {
 

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
-import net.suteren.stardict.wiktionary2stardict.stardict.files.InfoFile;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.InfoFile;
 
 /**
  * Writes StarDict .ifo file.
