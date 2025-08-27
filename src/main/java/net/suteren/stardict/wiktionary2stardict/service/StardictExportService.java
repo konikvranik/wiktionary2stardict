@@ -1,7 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
 import java.io.FileOutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -68,8 +67,6 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 
 	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
 		String baseName = "%s%s-%s".formatted(outputPrefix, langCodeFrom, langCodeTo);
-		// Build definitions map sorted by word
-		List<WordDefinition> definitions = new ArrayList<>();
 
 		List<TranslationEntity> allTranslations = repository.findAllTranslations(langCodeFrom, langCodeTo);
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
@@ -77,10 +74,9 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream("%s.dict".formatted(baseName)))) {
 			for (TranslationEntity translationEntity : allTranslations) {
 				WordDefinition wordDefinition = constructWordDefinition(translationEntity);
-				if (wordDefinition == null)
-					continue;
-				dictFileWriter.writeWordDefinition(wordDefinition);
-				definitions.add(wordDefinition);
+				if (wordDefinition != null) {
+					dictFileWriter.writeWordDefinition(wordDefinition);
+				}
 			}
 			sortedIdx = dictFileWriter.getIdxEntries();
 		}

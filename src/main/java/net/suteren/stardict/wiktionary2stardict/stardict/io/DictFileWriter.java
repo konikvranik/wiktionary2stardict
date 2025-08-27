@@ -41,7 +41,7 @@ public class DictFileWriter implements AutoCloseable {
 		for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
 			size += writeEntry(definitionEntry);
 		}
-		idxEntries.add(new IdxEntry(wordDef.getWord(), currentOffset.get(), size));
+		idxEntries.add(new IdxEntry(wordDef.getWord(), currentOffset.getAndAdd(size), size));
 		return size;
 	}
 

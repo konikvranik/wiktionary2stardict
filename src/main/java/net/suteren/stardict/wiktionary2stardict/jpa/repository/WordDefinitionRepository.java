@@ -15,21 +15,18 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 
 	@Query("""
 		select distinct d1, d2
-		from WordDefinitionEntity d1
-		join d1.links l1
-		join WordDefinitionEntity d2
+		from
+			WordDefinitionEntity d1
+				join d1.links l1,
+		    WordDefinitionEntity d2
+				join d2.links l2
 		where d1.language = :fromLang
 		  and d2.language = :toLang
 		  and d1.type = d2.type
 		  and d1.type != 'name'
 		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
-		  and exists (
-		      select 1
-		      from WordDefinitionLinkEntity l2
-		      where l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
-		        and l2.word = l1.word
-		        and l2 member of d2.links
-		  )
+		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
+		  and l1.word = l2.word
 		""")
 	List<TranslationEntity> findAllTranslations(String fromLang, String toLang);
 
