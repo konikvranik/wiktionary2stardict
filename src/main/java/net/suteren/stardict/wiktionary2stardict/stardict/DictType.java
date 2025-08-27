@@ -10,4 +10,13 @@ public enum DictType {
 	DictType(String type) {
 		this.type = type;
 	}
+
+	public static DictType resolve(String s) {
+		for (DictType dictType : DictType.values()) {
+			if (dictType.getType().equals(s)) {
+				return dictType;
+			}
+		}
+		return null;
+	}
 }

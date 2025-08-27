@@ -111,4 +111,14 @@ public class StardictIoUtil {
 		}
 		return buffer.array();
 	}
+
+	public static long toLong(byte[] bytes, int sizeInBits, boolean networkByteOrder) {
+		if (sizeInBits != Long.SIZE && sizeInBits != Integer.SIZE) {
+			throw new IllegalArgumentException("size must be either 32 or 64, got %d.".formatted(sizeInBits));
+		}
+		return ByteBuffer.wrap(bytes)
+			.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder())
+			.getLong();
+
+	}
 }

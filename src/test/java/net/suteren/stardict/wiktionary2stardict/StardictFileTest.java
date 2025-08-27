@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class StardictFileTest {
 			System.out.println("Načítám data ze souborů...");
 
 			// Načteme .idx soubor
-			List<IdxEntry> loadedIdxEntries = IdxFileReader.readIdxFile(idxFilename);
+			List<IdxEntry> loadedIdxEntries = new IdxFileReader(new FileInputStream(idxFilename), 32).readIdxFile();
 			System.out.println("Načteno " + loadedIdxEntries.size() + " idx záznamů.");
 
 			// Načteme .dict soubor

@@ -2,53 +2,46 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 /**
  * Class for reading StarDict .syn files
  */
-public class SynFileReader {
+@RequiredArgsConstructor
+public class SynFileReader implements AutoCloseable {
 
-    /**
-     * Loads synonyms from a .syn file
-     * @param filename Path to the .syn file
-     * @return List of synonym records
-     * @throws IOException When a file reading error occurs
-     */
-    public static List<SynonymumEntry> readSynFile(String filename) throws IOException {
-        List<SynonymumEntry> entries = new ArrayList<>();
+	private final FileInputStream fis;
 
-        try (FileInputStream fis = new FileInputStream(filename);
-             FileChannel channel = fis.getChannel()) {
+	/**
+	 * Loads synonyms from a .syn file
+	 *
+	 * @param filename Path to the .syn file
+	 * @return List of synonym records
+	 * @throws IOException When a file reading error occurs
+	 */
+	public List<SynonymumEntry> readSynFile() throws IOException {
+		List<SynonymumEntry> entries = new ArrayList<>();
 
-            ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
-            buffer.order(ByteOrder.BIG_ENDIAN);
-            channel.read(buffer);
-            buffer.flip();
+		CharBuffer cb = CharBuffer.allocate(255);
+		for (int i = fis.read(); i >= 0; i = fis.read()) {
+			char c = (char) i;
+			if (c == 0) {
+				entries.add(new SynonymumEntry(cb.toString(),
+					(int) StardictIoUtil.toLong(fis.readNBytes(Integer.SIZE / Byte.SIZE), Integer.SIZE, true)));
+				cb.clear();
+			} else {
+				cb.append(c);
+			}
+		}
+		return entries;
+	}
 
-            while (buffer.hasRemaining()) {
-                // Reading UTF-8 string up to the null terminator
-                StringBuilder wordBuilder = new StringBuilder();
-                byte b;
-                while ((b = buffer.get()) != 0) {
-                    wordBuilder.append((char) (b & 0xFF));
-                }
-                String word = new String(wordBuilder.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
-
-                // Reading the index of the original word (32-bit number in network byte order)
-                int originalWordIndex = buffer.getInt();
-
-                entries.add(new SynonymumEntry(word, originalWordIndex));
-            }
-        }
-
-        return entries;
-    }
+	@Override public void close() throws Exception {
+		fis.close();
+	}
 }

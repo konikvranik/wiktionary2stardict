@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.DictType;
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
-import net.suteren.stardict.wiktionary2stardict.stardict.domain.InfoFile;
+import net.suteren.stardict.wiktionary2stardict.stardict.domain.IfoFile;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 
 /**
@@ -35,12 +35,12 @@ public class IfoFileWriter implements AutoCloseable {
 		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : "kaikki.org %s to %s dictionary".formatted(langCodeFrom, langCodeTo);
 		try (IfoFileWriter ifoFileWriter = new IfoFileWriter(new FileWriter(baseName + ".ifo"))) {
 			ifoFileWriter.write(
-				new InfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL",
+				new IfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL",
 					LocalDate.now(), null, DictType.WORDNET));
 		}
 	}
 
-	public void write(InfoFile info) throws IOException {
+	public void write(IfoFile info) throws IOException {
 		// Required fields
 		writer.write("StarDict's dict ifo file\n");
 		writer.write("version=2.4.2\n");

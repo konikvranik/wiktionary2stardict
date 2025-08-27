@@ -1,32 +1,39 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.InputStream;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 
-public class IdxFileReader {
+@RequiredArgsConstructor
+public class IdxFileReader implements AutoCloseable {
 
-	public static List<IdxEntry> readIdxFile(String filename) throws IOException {
+	private final InputStream fis;
+	private final int sizeInBits;
+
+	public List<IdxEntry> readIdxFile() throws IOException {
 		List<IdxEntry> entries = new ArrayList<>();
 
-		try (FileInputStream fis = new FileInputStream(filename);
-			FileChannel channel = fis.getChannel()) {
-
-			ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
-			channel.read(buffer);
-			buffer.flip();
-
-			while (buffer.hasRemaining()) {
-				IdxEntry entry = IdxEntry.fromBytes(buffer);
-				entries.add(entry);
+		CharBuffer cb = CharBuffer.allocate(255);
+		for (int i = fis.read(); i >= 0; i = fis.read()) {
+			char c = (char) i;
+			if (c == 0) {
+				entries.add(new IdxEntry(cb.toString(),
+					StardictIoUtil.toLong(fis.readNBytes(sizeInBits / Byte.SIZE), sizeInBits, true),
+					(int) StardictIoUtil.toLong(fis.readNBytes(Integer.SIZE / Byte.SIZE), Integer.SIZE, true)));
+				cb.clear();
+			} else {
+				cb.append(c);
 			}
 		}
-
 		return entries;
+	}
+
+	@Override public void close() throws Exception {
+		fis.close();
 	}
 }

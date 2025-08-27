@@ -1,5 +1,7 @@
 package net.suteren.stardict.wiktionary2stardict.stardict;
 
+import java.util.Collection;
+
 import lombok.Getter;
 
 public enum EntryType {
@@ -14,5 +16,9 @@ public enum EntryType {
 
 	public boolean isString() {
 		return Character.isLowerCase(type);
+	}
+
+	public static Collection<EntryType> resolve(char[] chars) {
+		return null;
 	}
 }
