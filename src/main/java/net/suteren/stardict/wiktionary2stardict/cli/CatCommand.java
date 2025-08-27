@@ -3,6 +3,7 @@ package net.suteren.stardict.wiktionary2stardict.cli;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +39,7 @@ import picocli.CommandLine;
 	@SneakyThrows @Override
 	public void run() {
 
-		int dot = inputFile.getFileName().toString().lastIndexOf('.');
-		String base = (dot >= 0) ? inputFile.getFileName().toString().substring(0, dot) : inputFile.getFileName().toString();
-		Path ifoPath = inputFile.resolveSibling(base + ".ifo");
+		Path ifoPath = getGetSiblingFile(".ifo");
 
 		IfoFile ifo;
 		try (IfoFileReader ifoReader = new IfoFileReader(new BufferedReader(new FileReader(ifoPath.toFile())))) {
@@ -61,10 +60,17 @@ import picocli.CommandLine;
 			}
 
 		} else if (inputFile.getFileName().endsWith(".dict")) {
-			try (DictFileReader dictFileReader = new DictFileReader(new FileInputStream(inputFile.toFile()))) {
-				Map<String, WordDefinition> entries = dictFileReader.readDictFile(base, null, null);
+			Path idxPath = getGetSiblingFile(".idx");
+			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(idxPath.toFile()), ifo.idxoffsetbits());
+				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
+				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
 			}
 		}
+	}
 
+	private Path getGetSiblingFile(String s) {
+		int dot = inputFile.getFileName().toString().lastIndexOf('.');
+		String base = (dot >= 0) ? inputFile.getFileName().toString().substring(0, dot) : inputFile.getFileName().toString();
+		return inputFile.resolveSibling(base + s);
 	}
 }

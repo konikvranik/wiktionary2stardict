@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 
@@ -19,7 +21,9 @@ import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 @RequiredArgsConstructor
 public class DictFileReader implements AutoCloseable {
 
-	private final InputStream is;
+	private final FileChannel is;
+	private final List<IdxEntry> idxEntries;
+	private final Collection<EntryType> sameTypeSequence;
 
 	/**
 	 * Loads word definitions from a .dict file according to records in the .idx file
@@ -30,7 +34,7 @@ public class DictFileReader implements AutoCloseable {
 	 * @return Map of words and their definitions
 	 * @throws IOException When a file reading error occurs
 	 */
-	public static Map<String, WordDefinition> readDictFile(String dictFilename, List<IdxEntry> idxEntries, String sameTypeSequence) throws IOException {
+	public  Map<String, WordDefinition> readDictFile() throws IOException {
 		Map<String, WordDefinition> definitions = new HashMap<>();
 
 		try (FileInputStream fis = new FileInputStream(dictFilename);
