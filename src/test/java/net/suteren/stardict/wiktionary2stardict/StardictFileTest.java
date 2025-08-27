@@ -3,6 +3,8 @@ package net.suteren.stardict.wiktionary2stardict;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +78,8 @@ public class StardictFileTest {
 			System.out.println("Načteno " + loadedIdxEntries.size() + " idx záznamů.");
 
 			// Načteme .dict soubor
-			Map<String, WordDefinition> loadedDictData = DictFileReader.readDictFile(dictFilename, loadedIdxEntries, sameTypeSequence);
+			Map<String, WordDefinition> loadedDictData =
+				new DictFileReader(FileChannel.open(Path.of(dictFilename)), loadedIdxEntries, sameTypeSequence).readDictFile();
 			System.out.println("Načteno " + loadedDictData.size() + " definic slov.");
 
 			// Načteme .syn soubor

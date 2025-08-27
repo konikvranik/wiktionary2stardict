@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import lombok.NonNull;
 
-public record IdxEntry(String word, long offset, long size) implements Comparable<IdxEntry> {
+public record IdxEntry(String word, long offset, int size) implements Comparable<IdxEntry> {
 	@Override public int compareTo(IdxEntry o) {
 		if (o == null) {
 			return 1;

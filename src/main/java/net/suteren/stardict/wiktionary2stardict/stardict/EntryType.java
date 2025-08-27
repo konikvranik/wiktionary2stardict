@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.stardict;
 
+import java.nio.CharBuffer;
 import java.util.Collection;
 
 import lombok.Getter;
@@ -19,6 +20,16 @@ public enum EntryType {
 	}
 
 	public static Collection<EntryType> resolve(char[] chars) {
-		return null;
+		return CharBuffer.wrap(chars).chars().mapToObj(c -> resolve((char) c)).toList();
 	}
+
+	public static EntryType resolve(char typeChar) {
+		for (EntryType type : EntryType.values()) {
+			if (type.getType() == typeChar) {
+				return type;
+			}
+		}
+		throw new IllegalArgumentException("Neznámý typ záznamu: " + typeChar);
+	}
+
 }
