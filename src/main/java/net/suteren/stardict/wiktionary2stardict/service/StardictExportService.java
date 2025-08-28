@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -114,6 +115,24 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			.map(Sound::getIpa)
 			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
 			.forEach(wd.getDefinitions()::add);
+
+		// Render also HTML and XDXF representations for richer consumers
+		try {
+			String html = net.suteren.stardict.wiktionary2stardict.converter.WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
+			if (!org.apache.commons.lang3.StringUtils.isBlank(html)) {
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html));
+			}
+			String xdxf = net.suteren.stardict.wiktionary2stardict.converter.WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
+			if (!org.apache.commons.lang3.StringUtils.isBlank(xdxf)) {
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf));
+			}
+		} catch (Exception ignore) {
+			// keep minimal; skip rendering failures
+		}
+
+		Set<DefinitionEntry> uniqueDefinitions = wd.getDefinitions().stream().distinct().collect(Collectors.toSet());
+		wd.getDefinitions().clear();
+		wd.getDefinitions().addAll(uniqueDefinitions);
 
 		log.debug("Have {} definitions for {} word {}", wd.getDefinitions().size(), wiktionaryEntry.getWord(),
 			Optional.ofNullable(wiktionaryEntry.getLang_code()).orElse(wiktionaryEntry.getLang()));
