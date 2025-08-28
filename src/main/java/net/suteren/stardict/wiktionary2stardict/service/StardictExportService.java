@@ -3,6 +3,7 @@ package net.suteren.stardict.wiktionary2stardict.service;
 import java.io.FileOutputStream;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
+import net.suteren.stardict.wiktionary2stardict.converter.WiktionaryEntryRenderers;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.LanguageCombinationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.entity.TranslationEntity;
 import net.suteren.stardict.wiktionary2stardict.jpa.repository.WordDefinitionRepository;
@@ -118,19 +120,25 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 
 		// Render also HTML and XDXF representations for richer consumers
 		try {
-			String html = net.suteren.stardict.wiktionary2stardict.converter.WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
-			if (!org.apache.commons.lang3.StringUtils.isBlank(html)) {
+			String html = WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
+			if (StringUtils.isNotBlank(html)) {
 				wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html));
 			}
-			String xdxf = net.suteren.stardict.wiktionary2stardict.converter.WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
-			if (!org.apache.commons.lang3.StringUtils.isBlank(xdxf)) {
+		} catch (Exception ignore) {
+			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+			log.debug(ignore.getMessage(), ignore);
+		}
+		try {
+			String xdxf = WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
+			if (StringUtils.isNotBlank(xdxf)) {
 				wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf));
 			}
 		} catch (Exception ignore) {
-			// keep minimal; skip rendering failures
+			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+			log.debug(ignore.getMessage(), ignore);
 		}
 
-		Set<DefinitionEntry> uniqueDefinitions = wd.getDefinitions().stream().distinct().collect(Collectors.toSet());
+		Set<DefinitionEntry> uniqueDefinitions = new HashSet<>(wd.getDefinitions());
 		wd.getDefinitions().clear();
 		wd.getDefinitions().addAll(uniqueDefinitions);
 
