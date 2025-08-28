@@ -13,6 +13,6 @@ public record SynonymumEntry(String word, int indexPosition) implements Comparab
 	}
 
 	@Override public @NonNull String toString() {
-		return "%s;%d\n".formatted(word, indexPosition);
+		return "%s;%d".formatted(word, indexPosition);
 	}
 }

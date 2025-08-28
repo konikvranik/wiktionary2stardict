@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.cli;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -49,7 +50,7 @@ import picocli.CommandLine;
 		}
 
 		if (inputFile.toString().endsWith(".idx")) {
-			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(inputFile.toFile()), ifo.idxoffsetbits())) {
+			try (IdxFileReader idxFileReader = new IdxFileReader(new BufferedInputStream(new FileInputStream(inputFile.toFile())), ifo.idxoffsetbits())) {
 				List<IdxEntry> entries = idxFileReader.readIdxFile();
 				entries.forEach(System.out::println);
 				log.info("Displayed {} IDX entries.", entries.size());
@@ -63,7 +64,7 @@ import picocli.CommandLine;
 
 		} else if (inputFile.toString().endsWith(".dict")) {
 			Path idxPath = getGetSiblingFile(inputFile, ".idx");
-			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(idxPath.toFile()), ifo.idxoffsetbits());
+			try (IdxFileReader idxFileReader = new IdxFileReader(new BufferedInputStream(new FileInputStream(idxPath.toFile())), ifo.idxoffsetbits());
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
 				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
 			}

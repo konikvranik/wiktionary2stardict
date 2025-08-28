@@ -2,7 +2,8 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,15 +28,19 @@ public class SynFileReader implements AutoCloseable {
 	public List<SynonymumEntry> readSynFile() throws IOException {
 		List<SynonymumEntry> entries = new ArrayList<>();
 
-		CharBuffer cb = CharBuffer.allocate(255);
-		for (int i = fis.read(); i >= 0; i = fis.read()) {
-			char c = (char) i;
-			if (c == 0) {
-				entries.add(new SynonymumEntry(cb.toString(),
-					(int) StardictIoUtil.toLong(fis.readNBytes(Integer.SIZE / Byte.SIZE), Integer.SIZE, true)));
-				cb.clear();
+		ByteBuffer buffer = ByteBuffer.allocate(255);
+		for (int b = fis.read(), dataSize = 1; b >= 0; b = fis.read(), dataSize++) {
+			if (b == 0) {
+
+				byte[] sizeBytes = fis.readNBytes(Integer.SIZE / Byte.SIZE);
+				int size = (int) StardictIoUtil.toLong(sizeBytes, Integer.SIZE, true);
+
+				entries.add(new SynonymumEntry(StandardCharsets.UTF_8.decode(buffer.slice(0, dataSize - 1)).toString(), size));
+
+				dataSize = 0;
+				buffer.clear();
 			} else {
-				cb.append(c);
+				buffer.put((byte) b);
 			}
 		}
 		return entries;

@@ -13,6 +13,6 @@ public record IdxEntry(String word, long offset, int size) implements Comparable
 	}
 
 	@Override public @NonNull String toString() {
-		return "%s;%d;%d\n".formatted(word, offset, size);
+		return "%s;%d;%d".formatted(word, offset, size);
 	}
 }
