@@ -32,10 +32,11 @@ import picocli.CommandLine;
 
 	private final StardictExportService exportService;
 
+	@CommandLine.Option(names = { "-w", "--word" }, description = "Word to display")
+	String word;
+
 	@CommandLine.Parameters(index = "0", description = "Input file to print")
 	Path inputFile;
-
-	String exportPrefix;
 
 	@SneakyThrows @Override
 	public void run() {
@@ -52,13 +53,17 @@ import picocli.CommandLine;
 		if (inputFile.toString().endsWith(".idx")) {
 			try (IdxFileReader idxFileReader = new IdxFileReader(new BufferedInputStream(new FileInputStream(inputFile.toFile())), ifo.idxoffsetbits())) {
 				List<IdxEntry> entries = idxFileReader.readIdxFile();
-				entries.forEach(System.out::println);
+				entries.stream()
+					.filter(x -> x.word().contains(word))
+					.forEach(System.out::println);
 				log.info("Displayed {} IDX entries.", entries.size());
 			}
 		} else if (inputFile.toString().endsWith(".syn")) {
 			try (SynFileReader idxFileReader = new SynFileReader(new FileInputStream(inputFile.toFile()))) {
 				List<SynonymumEntry> entries = idxFileReader.readSynFile();
-				entries.forEach(System.out::println);
+				entries.stream()
+					.filter(x -> x.word().contains(word))
+					.forEach(System.out::println);
 				log.info("Displayed {} SYN entries.", entries.size());
 			}
 
@@ -68,11 +73,13 @@ import picocli.CommandLine;
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
 				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
 				entries.forEach((key, value) -> {
-					System.out.println(">>>>");
-					System.out.println(key);
-					System.out.println("----");
-					System.out.println(value);
-					System.out.println("<<<<");
+					if (key.contains(word)) {
+						System.out.println(">>>>");
+						System.out.println(key);
+						System.out.println("----");
+						System.out.println(value);
+						System.out.println("<<<<");
+					}
 				});
 				log.info("Displayed {} definitions.", entries.size());
 			}

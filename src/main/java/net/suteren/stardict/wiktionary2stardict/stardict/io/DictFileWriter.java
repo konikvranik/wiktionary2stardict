@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.DefinitionEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
@@ -27,7 +27,7 @@ public class DictFileWriter implements AutoCloseable {
 	private final AtomicLong currentOffset = new AtomicLong(0);
 
 	public static List<IdxEntry> writeDefinitionFile(String baseName, List<WordDefinition> definitions) throws Exception {
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream("%s.dict".formatted(baseName)))) {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
 			// Write dict -> idx entries
 			for (WordDefinition wordDef : definitions) {
 				dictFileWriter.writeWordDefinition(wordDef);
@@ -39,10 +39,9 @@ public class DictFileWriter implements AutoCloseable {
 	public int writeWordDefinition(WordDefinition wordDef) throws IOException {
 		int size = 0;
 		for (DefinitionEntry definitionEntry : wordDef.getDefinitions()) {
-			int entrySize = writeEntry(definitionEntry);
-			size += entrySize;
-			idxEntries.add(new IdxEntry(wordDef.getWord(), currentOffset.getAndAdd(entrySize) + 1, entrySize - 1));
+			size += writeEntry(definitionEntry);
 		}
+		idxEntries.add(new IdxEntry(wordDef.getWord(), currentOffset.getAndAdd(size), size - 1));
 		return size;
 	}
 
@@ -50,24 +49,26 @@ public class DictFileWriter implements AutoCloseable {
 		Optional<byte[]> definitionBytes = Optional.ofNullable(definitionEntry)
 			.map(DefinitionEntry::getDefinition)
 			.map(d -> d.getBytes(StandardCharsets.UTF_8));
+		int size = 0;
 		if (definitionBytes.isPresent()) {
 			byte[] data = definitionBytes.get();
+			size++;
 			outputStream.write(definitionEntry.getType().getType());
-			return writeDataOfType(definitionEntry.getType(), data) + 1;
+			if (definitionEntry.getType().isString()) {
+				outputStream.write(data);
+				size += data.length;
+				outputStream.write(0);
+				size++;
+				return size;
+			} else {
+				outputStream.write(StardictIoUtil.toBytes(data.length, 32, true));
+				size += 32 / Byte.SIZE;
+				outputStream.write(data);
+				size += data.length;
+				return size;
+			}
 		} else {
-			return 0;
-		}
-	}
-
-	private int writeDataOfType(EntryType type, byte[] data) throws IOException {
-		if (type.isString()) {
-			outputStream.write(data);
-			outputStream.write(0);
-			return data.length + 1;
-		} else {
-			outputStream.write(StardictIoUtil.toBytes(data.length, 32, true));
-			outputStream.write(data);
-			return data.length + 32 / Byte.SIZE;
+			return size;
 		}
 	}
 

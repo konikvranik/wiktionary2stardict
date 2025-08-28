@@ -1,5 +1,6 @@
 package net.suteren.stardict.wiktionary2stardict.service;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,7 +75,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		List<TranslationEntity> allTranslations = repository.findAllTranslations(langCodeFrom, langCodeTo);
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
 		List<IdxEntry> sortedIdx;
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream("%s.dict".formatted(baseName)))) {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
 			for (TranslationEntity translationEntity : allTranslations) {
 				WordDefinition wordDefinition = constructWordDefinition(translationEntity);
 				if (wordDefinition != null) {

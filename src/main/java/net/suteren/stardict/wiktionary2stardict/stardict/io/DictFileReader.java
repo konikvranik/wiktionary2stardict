@@ -49,34 +49,37 @@ public class DictFileReader implements AutoCloseable {
 
 	public List<DefinitionEntry> readWordDefinition(IdxEntry entry) throws IOException {
 
-		ByteBuffer buffer = ByteBuffer.allocate(entry.size() + 1);
-		channel.read(buffer, entry.offset() - 1);
+		ByteBuffer buffer = ByteBuffer.allocate(entry.size());
+		channel.read(buffer, entry.offset());
 		buffer.position(0);
+		ArrayList<DefinitionEntry> result = new ArrayList<>();
+		while (buffer.hasRemaining()) {
+			List<EntryType> types;
+			if (sameTypeSequence != null && !sameTypeSequence.isEmpty()) {
+				types = List.copyOf(sameTypeSequence);
+			} else {
+				types = List.of(EntryType.resolve((char) buffer.get()));
+			}
 
-		List<EntryType> types;
-		if (sameTypeSequence != null && !sameTypeSequence.isEmpty()) {
-			types = List.copyOf(sameTypeSequence);
-		} else {
-			types = List.of(EntryType.resolve((char) buffer.get()));
+			EntryType mainType = types.getFirst();
+
+			String def;
+			if (mainType.isString()) {
+				def = StardictIoUtil.readNullTerminatedUtf8String(buffer);
+			} else {
+				byte[] sizeBytes = new byte[4];
+				buffer.get(sizeBytes);
+				long dataSize = StardictIoUtil.toLong(sizeBytes, 32, true);
+				byte[] dataBytes = new byte[(int) dataSize];
+				buffer.get(dataBytes);
+				def = new String(dataBytes, StandardCharsets.UTF_8);
+			}
+
+			result.addAll(types.stream()
+				.map(t -> new DefinitionEntry(t, def))
+				.toList());
 		}
-
-		EntryType mainType = types.getFirst();
-
-		String def;
-		if (mainType.isString()) {
-			def = StardictIoUtil.readNullTerminatedUtf8String(buffer);
-		} else {
-			byte[] sizeBytes = new byte[4];
-			buffer.get(sizeBytes);
-			long dataSize = StardictIoUtil.toLong(sizeBytes, 32, true);
-			byte[] dataBytes = new byte[(int) dataSize];
-			buffer.get(dataBytes);
-			def = new String(dataBytes, StandardCharsets.UTF_8);
-		}
-
-		return types.stream()
-			.map(t -> new DefinitionEntry(t, def))
-			.toList();
+		return result;
 	}
 
 	@Override public void close() throws Exception {
