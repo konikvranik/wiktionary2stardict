@@ -38,7 +38,7 @@ public class IdxFileWriter implements AutoCloseable {
 		buffer.put(wordBytes);        // UTF-8 encoded word
 		buffer.put((byte) 0);         // null terminator
 		buffer.putInt((int) entry.offset());        // offset in network byte order
-		buffer.putInt((int) entry.size());          // size in network byte order
+		buffer.putInt(entry.size());          // size in network byte order
 		outputStream.write(buffer.array());
 		indexEntries.add(new SynonymumEntry(entry.word(), currentOffset.getAndAdd(1)));
 	}

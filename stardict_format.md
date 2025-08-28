@@ -410,6 +410,8 @@ StarDict have these extension:
 and "attach".
 <kref> can have "k" attribute.
 
+https://github.com/soshial/xdxf_makedict/tree/master/format_standard
+
 'y'
 Chinese YinBiao or Japanese KANA.
 The data should be a utf-8 string ending with '\0'.
