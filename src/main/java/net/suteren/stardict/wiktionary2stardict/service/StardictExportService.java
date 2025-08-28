@@ -138,6 +138,15 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
 			log.debug(ignore.getMessage(), ignore);
 		}
+		try {
+			String pango = WiktionaryEntryRenderers.toPango(wiktionaryEntry);
+			if (StringUtils.isNotBlank(pango)) {
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango));
+			}
+		} catch (Exception ignore) {
+			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+			log.debug(ignore.getMessage(), ignore);
+		}
 
 		Set<DefinitionEntry> uniqueDefinitions = new HashSet<>(wd.getDefinitions());
 		wd.getDefinitions().clear();

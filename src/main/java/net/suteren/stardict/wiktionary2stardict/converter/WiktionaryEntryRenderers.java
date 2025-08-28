@@ -17,6 +17,39 @@ public final class WiktionaryEntryRenderers {
 
     private WiktionaryEntryRenderers() {}
 
+    public static String toPango(WiktionaryEntry e) {
+        if (e == null) return "";
+        StringBuilder sb = new StringBuilder();
+        String title = Optional.ofNullable(e.getWord()).orElse("");
+        // Title in bold
+        sb.append("<b>").append(escapeXml(title)).append("</b>");
+        if (e.getPos() != null && !e.getPos().isBlank()) {
+            sb.append(" <small><i>(").append(escapeXml(e.getPos())).append(")</i></small>");
+        }
+        // IPA line(s)
+        var ipa = Optional.ofNullable(e.getSounds()).stream().flatMap(java.util.Collection::stream)
+            .map(Sound::getIpa).filter(s -> s != null && !s.isBlank()).collect(Collectors.toList());
+        if (!ipa.isEmpty()) {
+            sb.append("\n");
+            for (int i = 0; i < ipa.size(); i++) {
+                if (i>0) sb.append(", ");
+                sb.append("/<i>").append(escapeXml(ipa.get(i))).append("</i>/");
+            }
+        }
+        // Senses: number them manually
+        var senses = Optional.ofNullable(e.getSenses()).orElse(java.util.List.of());
+        if (!senses.isEmpty()) {
+            int n = 1;
+            for (Sense s : senses) {
+                if (s == null) continue;
+                String text = s.getSense();
+                if (text == null || text.isBlank()) continue;
+                sb.append("\n").append(n++).append(". ").append(escapeXml(text));
+            }
+        }
+        return sb.toString();
+    }
+
     public static String toHtml(WiktionaryEntry e) {
         if (e == null) return "";
         StringBuilder sb = new StringBuilder();
