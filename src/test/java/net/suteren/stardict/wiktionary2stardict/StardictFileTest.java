@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.DefinitionEntry;
@@ -40,7 +42,7 @@ public class StardictFileTest {
 			String dictFilename = "test.dict";
 			String idxFilename = "test.idx";
 			String synFilename = "test.syn";
-			String sameTypeSequence = "mgh"; // meaning, pango, html
+			Collection<EntryType> sameTypeSequence = Set.of(EntryType.MEANING, EntryType.PANGO, EntryType.HTML); // meaning, pango, html
 
 			System.out.println("Zapisuji testovací data do souborů...");
 
@@ -83,7 +85,8 @@ public class StardictFileTest {
 			System.out.println("Načteno " + loadedDictData.size() + " definic slov.");
 
 			// Načteme .syn soubor
-			List<SynonymumEntry> loadedSynEntries = SynFileReader.readSynFile(synFilename);
+			SynFileReader synFileReader = new SynFileReader(new FileInputStream(synFilename));
+			List<SynonymumEntry> loadedSynEntries = synFileReader.readSynFile();
 			System.out.println("Načteno " + loadedSynEntries.size() + " synonym.");
 
 			// Ověříme, že načtená data odpovídají původním datům

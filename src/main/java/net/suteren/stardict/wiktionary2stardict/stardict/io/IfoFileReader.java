@@ -3,6 +3,7 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,7 +21,7 @@ public class IfoFileReader implements AutoCloseable {
 	public IfoFile readIfoFile() throws IOException {
 
 		String line = reader.readLine();
-		if ("StarDict's dict ifo file".equals(line)) {
+		if ("StarDict's dict ifo file\n".equals(line)) {
 			throw new IllegalStateException("Malformed IFO file.");
 		}
 
@@ -50,7 +51,7 @@ public class IfoFileReader implements AutoCloseable {
 			getValue(line, "email=").ifPresent(email::set);
 			getValue(line, "website=").ifPresent(website::set);
 			getValue(line, "description=").ifPresent(description::set);
-			getValue(line, "date=").map(LocalDate::parse).ifPresent(date::set);
+			getValue(line, "date=").map(text -> LocalDate.parse(text, DateTimeFormatter.BASIC_ISO_DATE)).ifPresent(date::set);
 			getValue(line, "sametypesequence=").map(String::toCharArray).map(EntryType::resolve).ifPresent(sametypesequence::set);
 			getValue(line, "dicttype=").map(DictType::resolve).ifPresent(dicttype::set);
 

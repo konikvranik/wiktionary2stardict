@@ -10,30 +10,6 @@ import java.nio.charset.StandardCharsets;
 public class StardictIoUtil {
 
 	/**
-	 * Converts a 32-bit integer to network byte order (big-endian)
-	 * Equivalent to g_htonl() from C
-	 */
-	public static byte[] intToNetworkBytes(int value) {
-		return ByteBuffer.allocate(4)
-			.order(ByteOrder.BIG_ENDIAN)
-			.putInt(value)
-			.array();
-	}
-
-	/**
-	 * Reads a 32-bit integer from network byte order (big-endian)
-	 * Equivalent to g_ntohl() from C
-	 */
-	public static int networkBytesToInt(byte[] bytes) {
-		if (bytes.length != 4) {
-			throw new IllegalArgumentException("Expected 4 bytes for int, got " + bytes.length);
-		}
-		return ByteBuffer.wrap(bytes)
-			.order(ByteOrder.BIG_ENDIAN)
-			.getInt();
-	}
-
-	/**
 	 * Converts a string to UTF-8 bytes
 	 */
 	public static byte[] stringToUtf8Bytes(String str) {
@@ -54,12 +30,14 @@ public class StardictIoUtil {
 	 * @return The read string
 	 */
 	public static String readNullTerminatedUtf8String(ByteBuffer buffer) {
-		StringBuilder sb = new StringBuilder();
+		ByteBuffer dup = ByteBuffer.allocate(buffer.remaining());
 		byte b;
 		while (buffer.hasRemaining() && (b = buffer.get()) != 0) {
-			sb.append((char) (b & 0xFF));
+			dup.put(b);
 		}
-		return new String(sb.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+		byte[] bytes = new byte[dup.remaining()];
+		dup.get(bytes);
+		return new String(bytes, StandardCharsets.UTF_8);
 	}
 
 	/**

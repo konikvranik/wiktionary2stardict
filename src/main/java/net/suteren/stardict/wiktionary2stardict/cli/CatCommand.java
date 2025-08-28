@@ -39,7 +39,9 @@ import picocli.CommandLine;
 	@SneakyThrows @Override
 	public void run() {
 
-		Path ifoPath = getGetSiblingFile(".ifo");
+		inputFile = inputFile.toAbsolutePath().normalize();
+
+		Path ifoPath = getGetSiblingFile(inputFile, ".ifo");
 
 		IfoFile ifo;
 		try (IfoFileReader ifoReader = new IfoFileReader(new BufferedReader(new FileReader(ifoPath.toFile())))) {
@@ -60,7 +62,7 @@ import picocli.CommandLine;
 			}
 
 		} else if (inputFile.getFileName().endsWith(".dict")) {
-			Path idxPath = getGetSiblingFile(".idx");
+			Path idxPath = getGetSiblingFile(inputFile, ".idx");
 			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(idxPath.toFile()), ifo.idxoffsetbits());
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
 				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
@@ -68,9 +70,9 @@ import picocli.CommandLine;
 		}
 	}
 
-	private Path getGetSiblingFile(String s) {
-		int dot = inputFile.getFileName().toString().lastIndexOf('.');
-		String base = (dot >= 0) ? inputFile.getFileName().toString().substring(0, dot) : inputFile.getFileName().toString();
-		return inputFile.resolveSibling(base + s);
+	private static Path getGetSiblingFile(Path originalFile, String ext) {
+		int dot = originalFile.getFileName().toString().lastIndexOf('.');
+		String base = (dot >= 0) ? originalFile.getFileName().toString().substring(0, dot) : originalFile.getFileName().toString();
+		return originalFile.resolveSibling(base + ext);
 	}
 }

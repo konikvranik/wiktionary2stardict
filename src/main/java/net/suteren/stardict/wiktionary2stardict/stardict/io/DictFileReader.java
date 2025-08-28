@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -35,123 +36,46 @@ public class DictFileReader implements AutoCloseable {
 	 * @throws IOException When a file reading error occurs
 	 */
 	public Map<String, WordDefinition> readDictFile() throws IOException {
+
 		Map<String, WordDefinition> definitions = new HashMap<>();
-
 		for (IdxEntry entry : idxEntries) {
-			WordDefinition wordDef = readWordDefinition(entry);
-
-			definitions.put(entry.word(), wordDef);
+			definitions.computeIfAbsent(entry.word(), x -> new WordDefinition(x, new ArrayList<>()))
+				.getDefinitions()
+				.addAll(readWordDefinition(entry));
 
 		}
-
 		return definitions;
 	}
 
-	public WordDefinition readWordDefinition(IdxEntry entry) throws IOException {
+	public List<DefinitionEntry> readWordDefinition(IdxEntry entry) throws IOException {
+
 		ByteBuffer buffer = ByteBuffer.allocate(entry.size());
 		is.read(buffer, entry.offset());
-		WordDefinition wordDef;
-		int size = entry.size();
-		WordDefinition wordDef1 = new WordDefinition();
 
+		List<EntryType> types;
 		if (sameTypeSequence != null && !sameTypeSequence.isEmpty()) {
-			wordDef = fromBytesWithSameTypeSequence(buffer, size, sameTypeSequence);
+			types = List.copyOf(sameTypeSequence);
 		} else {
-			wordDef = fromBytesWithoutSameTypeSequence(buffer, size);
-		}
-		wordDef.setWord(entry.word());
-		return wordDef;
-	}
-
-	/**
-	 * Vytvoří WordDefinition z bytového bufferu bez použití sameTypeSequence
-	 */
-	private static WordDefinition fromBytesWithoutSameTypeSequence(ByteBuffer buffer, int size) {
-		WordDefinition wordDef = new WordDefinition();
-		int startPosition = buffer.position();
-
-		while (buffer.position() - startPosition < size) {
-			// Načteme typ
-			char typeChar = (char) buffer.get();
-			EntryType type = EntryType.resolve(typeChar);
-
-			// Načteme data podle typu
-			String data;
-			if (Character.isUpperCase(typeChar)) {
-				// Typy s velkými písmeny mají délku jako 4-bytové číslo
-				int dataLength = buffer.getInt();
-				byte[] dataBytes = new byte[dataLength];
-				buffer.get(dataBytes);
-				data = new String(dataBytes, StandardCharsets.UTF_8);
-			} else {
-				// Typy s malými písmeny končí null terminátorem
-				StringBuilder sb = new StringBuilder();
-				byte b;
-				while ((b = buffer.get()) != 0) {
-					sb.append((char) (b & 0xFF));
-				}
-				data = new String(sb.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
-			}
-
-			DefinitionEntry entry = new DefinitionEntry(type, data);
-			wordDef.getDefinitions().add(entry);
+			types = List.of(EntryType.resolve((char) buffer.get()));
 		}
 
-		return wordDef;
-	}
+		EntryType mainType = types.getFirst();
 
-	/**
-	 * Vytvoří WordDefinition z bytového bufferu s použitím sameTypeSequence
-	 */
-	private static WordDefinition fromBytesWithSameTypeSequence(ByteBuffer buffer, int size, Collection<EntryType> sameTypeSequence) {
-
-		WordDefinition wordDef = new WordDefinition();
-		int startPosition = buffer.position();
-
-		for (int i = 0; i < sameTypeSequence.length(); i++) {
-			char typeChar = sameTypeSequence.charAt(i);
-			EntryType type = EntryType.resolve(typeChar);
-			boolean isLastEntry = (i == sameTypeSequence.length() - 1);
-
-			// Načteme data podle typu
-			String data;
-			if (type.isString()) {
-				if (!isLastEntry) {
-					// Typy s malými písmeny končí null terminátorem (kromě posledního záznamu)
-					StringBuilder sb = new StringBuilder();
-					byte b;
-					while ((b = buffer.get()) != 0) {
-						sb.append((char) (b & 0xFF));
-					}
-					data = new String(sb.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
-				} else {
-					// Poslední záznam - přečteme všechna zbývající data
-					int remainingBytes = size - (buffer.position() - startPosition);
-					byte[] dataBytes = new byte[remainingBytes];
-					buffer.get(dataBytes);
-					data = new String(dataBytes, StandardCharsets.UTF_8);
-				}
-			} else {
-				if (!isLastEntry) {
-					// Typy s velkými písmeny mají délku jako 4-bytové číslo (kromě posledního záznamu)
-					int dataLength = buffer.getInt();
-					byte[] dataBytes = new byte[dataLength];
-					buffer.get(dataBytes);
-					data = new String(dataBytes, StandardCharsets.UTF_8);
-				} else {
-					// Poslední záznam - přečteme všechna zbývající data
-					int remainingBytes = size - (buffer.position() - startPosition);
-					byte[] dataBytes = new byte[remainingBytes];
-					buffer.get(dataBytes);
-					data = new String(dataBytes, StandardCharsets.UTF_8);
-				}
-			}
-
-			DefinitionEntry entry = new DefinitionEntry(type, data);
-			wordDef.getDefinitions().add(entry);
+		String def;
+		if (mainType.isString()) {
+			def = StardictIoUtil.readNullTerminatedUtf8String(buffer);
+		} else {
+			byte[] sizeBytes = new byte[4];
+			buffer.get(sizeBytes);
+			long dataSize = StardictIoUtil.toLong(sizeBytes, 32, true);
+			byte[] dataBytes = new byte[(int) dataSize];
+			buffer.get(dataBytes);
+			def = new String(dataBytes, StandardCharsets.UTF_8);
 		}
 
-		return wordDef;
+		return types.stream()
+			.map(t -> new DefinitionEntry(t, def))
+			.toList();
 	}
 
 	@Override public void close() throws Exception {
