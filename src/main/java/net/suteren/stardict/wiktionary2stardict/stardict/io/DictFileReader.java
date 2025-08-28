@@ -49,8 +49,8 @@ public class DictFileReader implements AutoCloseable {
 
 	public List<DefinitionEntry> readWordDefinition(IdxEntry entry) throws IOException {
 
-		ByteBuffer buffer = ByteBuffer.allocate(entry.size());
-		channel.read(buffer, entry.offset());
+		ByteBuffer buffer = ByteBuffer.allocate(entry.size() + 1);
+		channel.read(buffer, entry.offset() - 1);
 		buffer.position(0);
 
 		List<EntryType> types;
