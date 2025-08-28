@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +52,7 @@ public class IfoFileReader implements AutoCloseable {
 			getValue(line, "email=").ifPresent(email::set);
 			getValue(line, "website=").ifPresent(website::set);
 			getValue(line, "description=").ifPresent(description::set);
-			getValue(line, "date=").map(text -> LocalDate.parse(text, DateTimeFormatter.BASIC_ISO_DATE)).ifPresent(date::set);
+			getValue(line, "date=").map(text -> tryToParseDate(text)).ifPresent(date::set);
 			getValue(line, "sametypesequence=").map(String::toCharArray).map(EntryType::resolve).ifPresent(sametypesequence::set);
 			getValue(line, "dicttype=").map(DictType::resolve).ifPresent(dicttype::set);
 
@@ -61,6 +62,18 @@ public class IfoFileReader implements AutoCloseable {
 			email.get(), website.get(), description.get(), date.get(),
 			sametypesequence.get(), dicttype.get());
 
+	}
+
+	private static LocalDate tryToParseDate(String text) {
+		try {
+			return LocalDate.parse(text, DateTimeFormatter.BASIC_ISO_DATE);
+		} catch (DateTimeParseException ignored) {
+			try {
+				return LocalDate.parse(text, DateTimeFormatter.ofPattern("y.M.d"));
+			} catch (DateTimeParseException e) {
+				return null;
+			}
+		}
 	}
 
 	private static Optional<String> getValue(String line, String prefix) {

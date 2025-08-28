@@ -12,6 +12,9 @@ public record IfoFile(String version, String bookname, int wordcount, int synwor
 		if (version == null) {
 			version = "2.4.2";
 		}
+		if (idxoffsetbits <= 0) {
+			idxoffsetbits = 32;
+		}
 	}
 
 	public IfoFile(String bookname, int wordcount, int synwordcount, int idxfilesize, int idxoffsetbits, String author, String email, String website,
