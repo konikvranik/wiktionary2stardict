@@ -67,6 +67,14 @@ import picocli.CommandLine;
 			try (IdxFileReader idxFileReader = new IdxFileReader(new BufferedInputStream(new FileInputStream(idxPath.toFile())), ifo.idxoffsetbits());
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
 				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
+				entries.forEach((key, value) -> {
+					System.out.println(">>>>");
+					System.out.println(key);
+					System.out.println("----");
+					System.out.println(value);
+					System.out.println("<<<<");
+				});
+				log.info("Displayed {} definitions.", entries.size());
 			}
 		}
 	}

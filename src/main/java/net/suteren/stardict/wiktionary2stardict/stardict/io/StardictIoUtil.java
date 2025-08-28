@@ -32,12 +32,14 @@ public class StardictIoUtil {
 	public static String readNullTerminatedUtf8String(ByteBuffer buffer) {
 		ByteBuffer dup = ByteBuffer.allocate(buffer.remaining());
 		byte b;
+		int bytesRead = 0;
 		while (buffer.hasRemaining() && (b = buffer.get()) != 0) {
+			bytesRead++;
 			dup.put(b);
 		}
 		byte[] bytes = new byte[dup.remaining()];
 		dup.get(bytes);
-		return new String(bytes, StandardCharsets.UTF_8);
+		return StandardCharsets.UTF_8.decode(dup.slice(0, bytesRead)).toString();
 	}
 
 	/**

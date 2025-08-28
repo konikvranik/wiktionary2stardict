@@ -22,7 +22,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
 @RequiredArgsConstructor
 public class DictFileReader implements AutoCloseable {
 
-	private final FileChannel is;
+	private final FileChannel channel;
 	private final List<IdxEntry> idxEntries;
 	private final Collection<EntryType> sameTypeSequence;
 
@@ -50,7 +50,8 @@ public class DictFileReader implements AutoCloseable {
 	public List<DefinitionEntry> readWordDefinition(IdxEntry entry) throws IOException {
 
 		ByteBuffer buffer = ByteBuffer.allocate(entry.size());
-		is.read(buffer, entry.offset());
+		channel.read(buffer, entry.offset());
+		buffer.position(0);
 
 		List<EntryType> types;
 		if (sameTypeSequence != null && !sameTypeSequence.isEmpty()) {
@@ -79,6 +80,6 @@ public class DictFileReader implements AutoCloseable {
 	}
 
 	@Override public void close() throws Exception {
-		is.close();
+		channel.close();
 	}
 }

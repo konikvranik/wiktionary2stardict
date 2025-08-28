@@ -17,4 +17,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 public class DefinitionEntry {
     private EntryType type;
     private String definition;
+
+	@Override public String toString() {
+		return "%s;%s".formatted(type.getType(), definition);
+	}
 }
