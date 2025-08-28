@@ -68,7 +68,7 @@ public class IfoFileWriter implements AutoCloseable {
 			writer.write("website=" + info.website() + "\n");
 		}
 		if (info.date() != null) {
-			writer.write("date=" + info.date().format(DateTimeFormatter.BASIC_ISO_DATE) + "\n");
+			writer.write("date=" + info.date().format(DateTimeFormatter.ofPattern("y.M.d")) + "\n");
 		}
 		if (info.sametypesequence() != null && !info.sametypesequence().isEmpty()) {
 			writer.write("sametypesequence=" + joinSameTypeSequence(info.sametypesequence()) + "\n");
