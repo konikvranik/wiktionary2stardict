@@ -94,9 +94,12 @@ public class StardictIoUtil {
 		if (sizeInBits != Long.SIZE && sizeInBits != Integer.SIZE) {
 			throw new IllegalArgumentException("size must be either 32 or 64, got %d.".formatted(sizeInBits));
 		}
-		return ByteBuffer.wrap(bytes)
-			.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder())
-			.getLong();
-
+		ByteBuffer order = ByteBuffer.wrap(bytes)
+			.order(networkByteOrder ? ByteOrder.BIG_ENDIAN : ByteOrder.nativeOrder());
+		if (sizeInBits == Long.SIZE) {
+			return order.getLong();
+		} else {
+			return order.getInt();
+		}
 	}
 }

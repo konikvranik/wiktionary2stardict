@@ -2,7 +2,8 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,16 +19,21 @@ public class IdxFileReader implements AutoCloseable {
 	public List<IdxEntry> readIdxFile() throws IOException {
 		List<IdxEntry> entries = new ArrayList<>();
 
-		CharBuffer cb = CharBuffer.allocate(255);
-		for (int i = fis.read(); i >= 0; i = fis.read()) {
-			char c = (char) i;
-			if (c == 0) {
-				entries.add(new IdxEntry(cb.toString(),
-					StardictIoUtil.toLong(fis.readNBytes(sizeInBits / Byte.SIZE), sizeInBits, true),
-					(int) StardictIoUtil.toLong(fis.readNBytes(Integer.SIZE / Byte.SIZE), Integer.SIZE, true)));
-				cb.clear();
+		ByteBuffer buffer = ByteBuffer.allocate(255);
+		for (int b = fis.read(), dataSize = 1; b >= 0; b = fis.read(), dataSize++) {
+			if (b == 0) {
+				byte[] offsetBytes = fis.readNBytes(sizeInBits / Byte.SIZE);
+				long offset = StardictIoUtil.toLong(offsetBytes, sizeInBits, true);
+
+				byte[] sizeBytes = fis.readNBytes(Integer.SIZE / Byte.SIZE);
+				int size = (int) StardictIoUtil.toLong(sizeBytes, Integer.SIZE, true);
+
+				entries.add(new IdxEntry(StandardCharsets.UTF_8.decode(buffer.slice(0, dataSize - 1)).toString(), offset, size));
+
+				dataSize = 0;
+				buffer.clear();
 			} else {
-				cb.append(c);
+				buffer.put((byte) b);
 			}
 		}
 		return entries;

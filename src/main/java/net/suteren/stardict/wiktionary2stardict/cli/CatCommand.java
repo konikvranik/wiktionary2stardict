@@ -48,20 +48,20 @@ import picocli.CommandLine;
 			ifo = ifoReader.readIfoFile();
 		}
 
-		if (inputFile.getFileName().endsWith(".idx")) {
+		if (inputFile.toString().endsWith(".idx")) {
 			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(inputFile.toFile()), ifo.idxoffsetbits())) {
 				List<IdxEntry> entries = idxFileReader.readIdxFile();
 				entries.forEach(System.out::println);
 				log.info("Displayed {} IDX entries.", entries.size());
 			}
-		} else if (inputFile.getFileName().endsWith(".syn")) {
+		} else if (inputFile.toString().endsWith(".syn")) {
 			try (SynFileReader idxFileReader = new SynFileReader(new FileInputStream(inputFile.toFile()))) {
 				List<SynonymumEntry> entries = idxFileReader.readSynFile();
 				entries.forEach(System.out::println);
 				log.info("Displayed {} SYN entries.", entries.size());
 			}
 
-		} else if (inputFile.getFileName().endsWith(".dict")) {
+		} else if (inputFile.toString().endsWith(".dict")) {
 			Path idxPath = getGetSiblingFile(inputFile, ".idx");
 			try (IdxFileReader idxFileReader = new IdxFileReader(new FileInputStream(idxPath.toFile()), ifo.idxoffsetbits());
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
