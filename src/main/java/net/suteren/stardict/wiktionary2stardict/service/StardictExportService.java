@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,9 +50,9 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 	}
 
 	@Transactional(readOnly = true)
-	public void export(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
+	public void export(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo, Collection<Character> definitionFormats) throws Exception {
 		if (langCodeFrom != null && langCodeTo != null) {
-			exportInternal(outputPrefix, bookname, langCodeFrom, langCodeTo);
+			exportInternal(outputPrefix, bookname, langCodeFrom, langCodeTo, definitionFormats);
 		} else {
 			List<LanguageCombinationEntity> languageCombinations;
 			if (langCodeFrom != null) {
@@ -66,12 +67,13 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 				.collect(Collectors.joining(";")));
 
 			for (LanguageCombinationEntity lc : languageCombinations) {
-				exportInternal(outputPrefix, bookname, lc.from(), lc.to());
+				exportInternal(outputPrefix, bookname, lc.from(), lc.to(), definitionFormats);
 			}
 		}
 	}
 
-	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo) throws Exception {
+	private void exportInternal(String outputPrefix, String bookname, String langCodeFrom, String langCodeTo, Collection<Character> definitionFormats)
+		throws Exception {
 		String baseName = "%s%s-%s".formatted(outputPrefix, langCodeFrom, langCodeTo);
 
 		List<TranslationEntity> allTranslations = repository.findAllTranslations(langCodeFrom, langCodeTo);
@@ -82,7 +84,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			DictFileWriter.Mode.ALL)) {
 
 			sortedIdx = dictFileWriter.writeDefinitionFile(allTranslations.stream()
-				.map(this::constructWordDefinition)
+				.map(e -> constructWordDefinition(e, definitionFormats))
 				.filter(Objects::nonNull));
 		}
 		Collections.sort(sortedIdx);
@@ -92,64 +94,73 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		IfoFileWriter.writeIfoFile(bookname, langCodeFrom, langCodeTo, sortedIdx, sortedSyn, baseName);
 	}
 
-	private WordDefinition constructWordDefinition(TranslationEntity e) {
+	private WordDefinition constructWordDefinition(TranslationEntity e, Collection<Character> definitionFormats) {
 
 		log.debug("Processing {}", e.source().getWord());
 		WiktionaryEntry wiktionaryEntry = parseWiktionaryEntry(e);
 		if (wiktionaryEntry == null) {return null;}
-
 		WordDefinition wd = new WordDefinition();
 		wd.setWord(e.source().getWord());
 
 		wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord().getBytes(StandardCharsets.UTF_8)));
+		if (CollectionUtils.isEmpty(definitionFormats) || definitionFormats.contains('m')) {
 
-		Optional.of(wiktionaryEntry)
-			.map(WiktionaryEntry::getSenses)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sense::getSense)
-			.filter(StringUtils::isNotBlank)
-			.map(s -> new DefinitionEntry(EntryType.MEANING, s.getBytes(StandardCharsets.UTF_8)))
-			.forEach(wd.getDefinitions()::add);
+			Optional.of(wiktionaryEntry)
+				.map(WiktionaryEntry::getSenses)
+				.stream()
+				.flatMap(Collection::stream)
+				.map(Sense::getSense)
+				.filter(StringUtils::isNotBlank)
+				.map(s -> new DefinitionEntry(EntryType.MEANING, s.getBytes(StandardCharsets.UTF_8)))
+				.forEach(wd.getDefinitions()::add);
 
-		Optional.of(wiktionaryEntry)
-			.map(WiktionaryEntry::getSounds)
-			.stream()
-			.flatMap(Collection::stream)
-			.map(Sound::getIpa)
-			.filter(StringUtils::isNotBlank)
-			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s.strip()
-				.replaceAll("^\\s*/?(.*[^/])/?$", "$1")
-				.getBytes(StandardCharsets.UTF_8)))
-			.forEach(wd.getDefinitions()::add);
-
-		// Render also HTML and XDXF representations for richer consumers
-		try {
-			String html = WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
-			if (StringUtils.isNotBlank(html)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html.getBytes(StandardCharsets.UTF_8)));
-			}
-		} catch (Exception ignore) {
-			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-			log.debug(ignore.getMessage(), ignore);
+			Optional.of(wiktionaryEntry)
+				.map(WiktionaryEntry::getSounds)
+				.stream()
+				.flatMap(Collection::stream)
+				.map(Sound::getIpa)
+				.filter(StringUtils::isNotBlank)
+				.map(s -> new DefinitionEntry(EntryType.PHONETIC, s.strip()
+					.replaceAll("^\\s*/?(.*[^/])/?$", "//$1//")
+					.getBytes(StandardCharsets.UTF_8)))
+				.forEach(wd.getDefinitions()::add);
 		}
-		try {
-			String xdxf = WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
-			if (StringUtils.isNotBlank(xdxf)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf.getBytes(StandardCharsets.UTF_8)));
+
+		if (CollectionUtils.isEmpty(definitionFormats) || definitionFormats.contains('h')) {
+			// Render also HTML and XDXF representations for richer consumers
+			try {
+				String html = WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
+				if (StringUtils.isNotBlank(html)) {
+					wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html.getBytes(StandardCharsets.UTF_8)));
+				}
+			} catch (Exception ignore) {
+				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+				log.debug(ignore.getMessage(), ignore);
 			}
-		} catch (Exception ignore) {
-			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-			log.debug(ignore.getMessage(), ignore);
 		}
-		try {
-			String pango = WiktionaryEntryRenderers.toPango(wiktionaryEntry);
-			if (StringUtils.isNotBlank(pango)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango.getBytes(StandardCharsets.UTF_8)));
+
+		if (CollectionUtils.isEmpty(definitionFormats) || definitionFormats.contains('x')) {
+			try {
+				String xdxf = WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
+				if (StringUtils.isNotBlank(xdxf)) {
+					wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf.getBytes(StandardCharsets.UTF_8)));
+				}
+			} catch (Exception ignore) {
+				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+				log.debug(ignore.getMessage(), ignore);
 			}
-		} catch (Exception ignore) {
-			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-			log.debug(ignore.getMessage(), ignore);
+		}
+
+		if (CollectionUtils.isEmpty(definitionFormats) || definitionFormats.contains('g')) {
+			try {
+				String pango = WiktionaryEntryRenderers.toPango(wiktionaryEntry);
+				if (StringUtils.isNotBlank(pango)) {
+					wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango.getBytes(StandardCharsets.UTF_8)));
+				}
+			} catch (Exception ignore) {
+				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
+				log.debug(ignore.getMessage(), ignore);
+			}
 		}
 
 		Set<DefinitionEntry> uniqueDefinitions = new HashSet<>(wd.getDefinitions());

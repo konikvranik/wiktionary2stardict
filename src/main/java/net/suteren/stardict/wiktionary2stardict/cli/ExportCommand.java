@@ -1,11 +1,14 @@
 package net.suteren.stardict.wiktionary2stardict.cli;
 
+import java.util.Collection;
+
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.suteren.stardict.wiktionary2stardict.service.StardictExportService;
+import net.suteren.stardict.wiktionary2stardict.stardict.EntryType;
 import picocli.CommandLine;
 
 @Slf4j
@@ -30,9 +33,12 @@ import picocli.CommandLine;
 	@CommandLine.Option(names = { "-t", "--sametypesequence" }, description = "sameTypeSequence for StarDict (default: m)")
 	String sameTypeSequence = "m";
 
+	@CommandLine.Option(names = { "-f", "--definition-formats" }, description = "Definition formats")
+	Collection<Character> definitionFormats;
+
 	@SneakyThrows @Override
 	public void run() {
-		exportService.export(exportPrefix, bookname, langCodeFrom, langCodeTo);
+		exportService.export(exportPrefix, bookname, langCodeFrom, langCodeTo, definitionFormats);
 		log.info("Exported StarDict files with prefix: {}", exportPrefix);
 	}
 }
