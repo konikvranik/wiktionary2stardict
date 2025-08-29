@@ -9,13 +9,13 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.suteren.stardict.wiktionary2stardict.service.StardictExportService;
-import net.suteren.stardict.wiktionary2stardict.stardict.domain.IdxEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.IfoFile;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.SynonymumEntry;
 import net.suteren.stardict.wiktionary2stardict.stardict.domain.WordDefinition;
@@ -52,17 +52,16 @@ import picocli.CommandLine;
 
 		if (inputFile.toString().endsWith(".idx")) {
 			try (IdxFileReader idxFileReader = new IdxFileReader(new BufferedInputStream(new FileInputStream(inputFile.toFile())), ifo.idxoffsetbits())) {
-				List<IdxEntry> entries = idxFileReader.readIdxFile();
-				entries.stream()
-					.filter(x -> x.word().contains(word))
+				idxFileReader.readIdxFile().stream()
+					.filter(x -> StringUtils.isBlank(word) || x.word().contains(word))
 					.forEach(System.out::println);
-				log.info("Displayed {} IDX entries.", entries.size());
+				log.info("Displayed {} IDX entries.", idxFileReader.readIdxFile().size());
 			}
 		} else if (inputFile.toString().endsWith(".syn")) {
 			try (SynFileReader idxFileReader = new SynFileReader(new FileInputStream(inputFile.toFile()))) {
 				List<SynonymumEntry> entries = idxFileReader.readSynFile();
 				entries.stream()
-					.filter(x -> x.word().contains(word))
+					.filter(x -> StringUtils.isBlank(word) || x.word().contains(word))
 					.forEach(System.out::println);
 				log.info("Displayed {} SYN entries.", entries.size());
 			}
@@ -73,7 +72,7 @@ import picocli.CommandLine;
 				DictFileReader dictFileReader = new DictFileReader(FileChannel.open(inputFile), idxFileReader.readIdxFile(), ifo.sametypesequence())) {
 				Map<String, WordDefinition> entries = dictFileReader.readDictFile();
 				entries.forEach((key, value) -> {
-					if (key.contains(word)) {
+					if (StringUtils.isBlank(word) || key.contains(word)) {
 						System.out.println(">>>>");
 						System.out.println(key);
 						System.out.println("----");
