@@ -18,6 +18,8 @@ java {
 
 repositories {
 	mavenCentral()
+	// jcenter() was removed because it is shut down and can cause resolution failures.
+	maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -28,8 +30,9 @@ dependencies {
 	implementation libs.spring.boot.starter.restclient
 	implementation libs.picocli
 	implementation libs.semver4j
-	implementation 'org.apache.commons:commons-lang3:3.14.0'
-	implementation 'org.jsoup:jsoup:1.17.2'
+	implementation libs.commons.lang3
+	implementation libs.jsoup
+	implementation libs.dictzip
 	annotationProcessor libs.picocli.codegen
 	runtimeOnly libs.h2
 	testImplementation libs.spring.boot.starter.test

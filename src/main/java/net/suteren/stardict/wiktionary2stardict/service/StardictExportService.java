@@ -78,9 +78,10 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
 		List<IdxEntry> sortedIdx;
 
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))), DictFileWriter.Mode.ALL)) {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))),
+			DictFileWriter.Mode.ALL)) {
 
-			sortedIdx = dictFileWriter.writeDefinitionFile( allTranslations.stream()
+			sortedIdx = dictFileWriter.writeDefinitionFile(allTranslations.stream()
 				.map(this::constructWordDefinition)
 				.filter(Objects::nonNull));
 		}
@@ -116,7 +117,10 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			.stream()
 			.flatMap(Collection::stream)
 			.map(Sound::getIpa)
-			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s.getBytes(StandardCharsets.UTF_8)))
+			.filter(StringUtils::isNotBlank)
+			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s.strip()
+				.replaceAll("^\\s*/?(.*[^/])/?$", "$1")
+				.getBytes(StandardCharsets.UTF_8)))
 			.forEach(wd.getDefinitions()::add);
 
 		// Render also HTML and XDXF representations for richer consumers

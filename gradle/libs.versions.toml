@@ -18,6 +18,8 @@ picocli = { module = "info.picocli:picocli", version.ref = "picocliVersion" }
 picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocliVersion" }
 # Other
 semver4j = { module = "com.vdurmont:semver4j", version.ref = "semver4jVersion" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version = "3.14.0" }
+jsoup = { module = "org.jsoup:jsoup", version = "1.17.2" }
 # Spring Batch
 spring-batch-test = { module = "org.springframework.batch:spring-batch-test" }
 # Spring Boot
@@ -28,6 +30,7 @@ spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot
 spring-boot-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 postgres-driver = { module = "org.postgresql:postgresql", version = "42.7.4" }
+dictzip = { module = "io.github.dictzip:dictzip", version = "0.13.0" }
 
 [plugins]
 lombok = { id = "io.freefair.lombok", version.ref = "lombokVersion" }

@@ -2,7 +2,6 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
