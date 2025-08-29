@@ -2,10 +2,12 @@ package net.suteren.stardict.wiktionary2stardict.service;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -75,14 +77,12 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		List<TranslationEntity> allTranslations = repository.findAllTranslations(langCodeFrom, langCodeTo);
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
 		List<IdxEntry> sortedIdx;
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
-			for (TranslationEntity translationEntity : allTranslations) {
-				WordDefinition wordDefinition = constructWordDefinition(translationEntity);
-				if (wordDefinition != null) {
-					dictFileWriter.writeWordDefinition(wordDefinition);
-				}
-			}
-			sortedIdx = dictFileWriter.getIdxEntries();
+
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))), DictFileWriter.Mode.ALL)) {
+
+			sortedIdx = dictFileWriter.writeDefinitionFile( allTranslations.stream()
+				.map(this::constructWordDefinition)
+				.filter(Objects::nonNull));
 		}
 		Collections.sort(sortedIdx);
 		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx);
@@ -100,7 +100,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		WordDefinition wd = new WordDefinition();
 		wd.setWord(e.source().getWord());
 
-		wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord()));
+		wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord().getBytes(StandardCharsets.UTF_8)));
 
 		Optional.of(wiktionaryEntry)
 			.map(WiktionaryEntry::getSenses)
@@ -108,7 +108,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			.flatMap(Collection::stream)
 			.map(Sense::getSense)
 			.filter(StringUtils::isNotBlank)
-			.map(s -> new DefinitionEntry(EntryType.MEANING, s))
+			.map(s -> new DefinitionEntry(EntryType.MEANING, s.getBytes(StandardCharsets.UTF_8)))
 			.forEach(wd.getDefinitions()::add);
 
 		Optional.of(wiktionaryEntry)
@@ -116,14 +116,14 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			.stream()
 			.flatMap(Collection::stream)
 			.map(Sound::getIpa)
-			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s))
+			.map(s -> new DefinitionEntry(EntryType.PHONETIC, s.getBytes(StandardCharsets.UTF_8)))
 			.forEach(wd.getDefinitions()::add);
 
 		// Render also HTML and XDXF representations for richer consumers
 		try {
 			String html = WiktionaryEntryRenderers.toHtml(wiktionaryEntry);
 			if (StringUtils.isNotBlank(html)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html));
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html.getBytes(StandardCharsets.UTF_8)));
 			}
 		} catch (Exception ignore) {
 			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
@@ -132,7 +132,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		try {
 			String xdxf = WiktionaryEntryRenderers.toXdxf(wiktionaryEntry);
 			if (StringUtils.isNotBlank(xdxf)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf));
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf.getBytes(StandardCharsets.UTF_8)));
 			}
 		} catch (Exception ignore) {
 			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
@@ -141,7 +141,7 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		try {
 			String pango = WiktionaryEntryRenderers.toPango(wiktionaryEntry);
 			if (StringUtils.isNotBlank(pango)) {
-				wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango));
+				wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango.getBytes(StandardCharsets.UTF_8)));
 			}
 		} catch (Exception ignore) {
 			log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());

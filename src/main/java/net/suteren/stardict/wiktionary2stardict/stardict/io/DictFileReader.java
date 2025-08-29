@@ -63,16 +63,16 @@ public class DictFileReader implements AutoCloseable {
 
 			EntryType mainType = types.getFirst();
 
-			String def;
+			byte[] def;
 			if (mainType.isString()) {
-				def = StardictIoUtil.readNullTerminatedUtf8String(buffer);
+				def = StardictIoUtil.readNullTerminatedUtf8String(buffer).getBytes(StandardCharsets.UTF_8);
 			} else {
 				byte[] sizeBytes = new byte[4];
 				buffer.get(sizeBytes);
 				long dataSize = StardictIoUtil.toLong(sizeBytes, 32, true);
 				byte[] dataBytes = new byte[(int) dataSize];
 				buffer.get(dataBytes);
-				def = new String(dataBytes, StandardCharsets.UTF_8);
+				def = dataBytes;
 			}
 
 			result.addAll(types.stream()

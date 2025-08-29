@@ -1,14 +1,17 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.io;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -25,15 +28,20 @@ public class DictFileWriter implements AutoCloseable {
 	@Getter private final List<IdxEntry> idxEntries = new ArrayList<>();
 	private final OutputStream outputStream;
 	private final AtomicLong currentOffset = new AtomicLong(0);
+	private final Mode mode;
 
-	public static List<IdxEntry> writeDefinitionFile(String baseName, List<WordDefinition> definitions) throws Exception {
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
-			// Write dict -> idx entries
-			for (WordDefinition wordDef : definitions) {
-				dictFileWriter.writeWordDefinition(wordDef);
-			}
-			return dictFileWriter.getIdxEntries();
+	public List<IdxEntry> writeDefinitionFile(Stream<WordDefinition> definitions) throws Exception {
+		// Nejprve seskupíme definice podle slova a sloučíme je do jednoho záznamu na slovo
+		Map<String, Set<DefinitionEntry>> groupedDefinitionEntries = definitions.collect(Collectors.groupingBy(WordDefinition::getWord,
+			Collectors.mapping(WordDefinition::getDefinitions,
+				Collectors.flatMapping(Collection::stream,
+					Collectors.toSet()))));
+
+		// Zapišeme po jednom záznamu pro každé slovo
+		for (Map.Entry<String, Set<DefinitionEntry>> entry : groupedDefinitionEntries.entrySet()) {
+			writeWordDefinition(new WordDefinition(entry.getKey(), entry.getValue()));
 		}
+		return getIdxEntries();
 	}
 
 	public int writeWordDefinition(WordDefinition wordDef) throws IOException {
@@ -47,8 +55,7 @@ public class DictFileWriter implements AutoCloseable {
 
 	private int writeEntry(DefinitionEntry definitionEntry) throws IOException {
 		Optional<byte[]> definitionBytes = Optional.ofNullable(definitionEntry)
-			.map(DefinitionEntry::getDefinition)
-			.map(d -> d.getBytes(StandardCharsets.UTF_8));
+			.map(DefinitionEntry::getDefinition);
 		int size = 0;
 		if (definitionBytes.isPresent()) {
 			byte[] data = definitionBytes.get();
@@ -74,5 +81,9 @@ public class DictFileWriter implements AutoCloseable {
 
 	@Override public void close() throws Exception {
 		outputStream.close();
+	}
+
+	public enum Mode {
+		ALL, SPECIFIC, PANGO, XDXF, HTML
 	}
 }

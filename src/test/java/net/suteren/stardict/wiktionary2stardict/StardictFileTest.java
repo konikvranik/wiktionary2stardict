@@ -48,7 +48,7 @@ public class StardictFileTest {
 
 			List<IdxEntry> idxEntries;
 			// Zapíšeme .dict soubor a získáme .idx záznamy
-			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename))) {
+			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename), DictFileWriter.Mode.ALL)) {
 				for (WordDefinition wordDef : testData) {
 					dictFileWriter.writeWordDefinition(wordDef);
 				}
@@ -118,11 +118,11 @@ public class StardictFileTest {
 
 		List<DefinitionEntry> definitions1 = new ArrayList<>();
 		definitions1.add(
-			new DefinitionEntry(EntryType.MEANING, "A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates."));
+			new DefinitionEntry(EntryType.MEANING, "A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 		definitions1.add(new DefinitionEntry(EntryType.PANGO,
-			"A <b>common</b>, round fruit produced by the tree <i>Malus domestica</i>, cultivated in temperate climates."));
+			"A <b>common</b>, round fruit produced by the tree <i>Malus domestica</i>, cultivated in temperate climates.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 		definitions1.add(
-			new DefinitionEntry(EntryType.HTML, "<div>A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.</div>"));
+			new DefinitionEntry(EntryType.HTML, "<div>A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
 		word1.setDefinitions(definitions1);
 		data.add(word1);
@@ -133,11 +133,11 @@ public class StardictFileTest {
 
 		List<DefinitionEntry> definitions2 = new ArrayList<>();
 		definitions2.add(
-			new DefinitionEntry(EntryType.MEANING, "An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin."));
+			new DefinitionEntry(EntryType.MEANING, "An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 		definitions2.add(
-			new DefinitionEntry(EntryType.PANGO, "An <b>elongated curved</b> tropical fruit that grows in bunches and has a creamy flesh and a smooth skin."));
+			new DefinitionEntry(EntryType.PANGO, "An <b>elongated curved</b> tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 		definitions2.add(new DefinitionEntry(EntryType.HTML,
-			"<div>An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.</div>"));
+			"<div>An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
 		word2.setDefinitions(definitions2);
 		data.add(word2);
@@ -147,9 +147,9 @@ public class StardictFileTest {
 		word3.setWord("orange");
 
 		List<DefinitionEntry> definitions3 = new ArrayList<>();
-		definitions3.add(new DefinitionEntry(EntryType.MEANING, "A round, reddish-yellow, acidic fruit of the citrus family."));
-		definitions3.add(new DefinitionEntry(EntryType.PANGO, "A <b>round</b>, reddish-yellow, acidic fruit of the <i>citrus</i> family."));
-		definitions3.add(new DefinitionEntry(EntryType.HTML, "<div>A round, reddish-yellow, acidic fruit of the citrus family.</div>"));
+		definitions3.add(new DefinitionEntry(EntryType.MEANING, "A round, reddish-yellow, acidic fruit of the citrus family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		definitions3.add(new DefinitionEntry(EntryType.PANGO, "A <b>round</b>, reddish-yellow, acidic fruit of the <i>citrus</i> family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		definitions3.add(new DefinitionEntry(EntryType.HTML, "<div>A round, reddish-yellow, acidic fruit of the citrus family.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
 		word3.setDefinitions(definitions3);
 		data.add(word3);
@@ -242,10 +242,12 @@ public class StardictFileTest {
 				return false;
 			}
 
-			// Ověříme jednotlivé definice
-			for (int i = 0; i < originalDef.getDefinitions().size(); i++) {
-				DefinitionEntry originalEntry = originalDef.getDefinitions().get(i);
-				DefinitionEntry loadedEntry = loadedDef.getDefinitions().get(i);
+			// Ověříme jednotlivé definice (zachováme pořadí pomocí iterátorů)
+			java.util.Iterator<DefinitionEntry> itOrig = originalDef.getDefinitions().iterator();
+			java.util.Iterator<DefinitionEntry> itLoad = loadedDef.getDefinitions().iterator();
+			while (itOrig.hasNext() && itLoad.hasNext()) {
+				DefinitionEntry originalEntry = itOrig.next();
+				DefinitionEntry loadedEntry = itLoad.next();
 
 				if (originalEntry.getType() != loadedEntry.getType()) {
 					System.out.println("Nesouhlasí typ definice pro slovo " + word + ": původní=" +
@@ -253,12 +255,16 @@ public class StardictFileTest {
 					return false;
 				}
 
-				if (!originalEntry.getDefinition().equals(loadedEntry.getDefinition())) {
+				if (!java.util.Arrays.equals(originalEntry.getDefinition(), loadedEntry.getDefinition())) {
 					System.out.println("Nesouhlasí obsah definice pro slovo " + word + ":");
-					System.out.println("Původní: " + originalEntry.getDefinition());
-					System.out.println("Načtený: " + loadedEntry.getDefinition());
+					System.out.println("Původní: " + new String(originalEntry.getDefinition(), java.nio.charset.StandardCharsets.UTF_8));
+					System.out.println("Načtený: " + new String(loadedEntry.getDefinition(), java.nio.charset.StandardCharsets.UTF_8));
 					return false;
 				}
+			}
+			if (itOrig.hasNext() || itLoad.hasNext()) {
+				System.out.println("Nesouhlasí počet porovnaných definic u slova: " + word);
+				return false;
 			}
 		}
 

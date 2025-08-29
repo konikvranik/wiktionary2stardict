@@ -1,7 +1,7 @@
 package net.suteren.stardict.wiktionary2stardict.stardict.domain;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
@@ -13,14 +13,11 @@ import lombok.NoArgsConstructor;
  * Reprezentuje definici slova ve StarDict slovníku.
  * Obsahuje seznam definičních záznamů různých typů.
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class WordDefinition implements Comparable<WordDefinition> {
 	private String word;
 	@Builder.Default
-	private List<DefinitionEntry> definitions = new ArrayList<>();
+	private Collection<DefinitionEntry> definitions = new ArrayList<>();
 
 	@Override public String toString() {
 		return definitions.stream()
