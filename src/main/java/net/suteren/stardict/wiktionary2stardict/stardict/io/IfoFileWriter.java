@@ -25,7 +25,7 @@ public class IfoFileWriter implements AutoCloseable {
 	private final Writer writer;
 
 	public static void writeIfoFile(String bookname, String langCodeFrom, String langCodeTo, List<IdxEntry> sortedIdx, List<SynonymumEntry> sortedSyn,
-		String baseName) throws Exception {
+		String baseName, int sizeInBits) throws Exception {
 		int wordcount = sortedIdx.size();
 		int synwordcount = sortedSyn.size();
 		int idxfilesize = sortedIdx.stream()
@@ -35,7 +35,7 @@ public class IfoFileWriter implements AutoCloseable {
 		String usedBookname = bookname != null && !bookname.isBlank() ? bookname : "kaikki.org %s to %s dictionary".formatted(langCodeFrom, langCodeTo);
 		try (IfoFileWriter ifoFileWriter = new IfoFileWriter(new FileWriter(baseName + ".ifo"))) {
 			ifoFileWriter.write(
-				new IfoFile(usedBookname, wordcount, synwordcount, idxfilesize, 32, null, null, null, "Generated from Wiktionary JSONL",
+				new IfoFile(usedBookname, wordcount, synwordcount, idxfilesize, sizeInBits, null, null, null, "Generated from Wiktionary JSONL",
 					LocalDate.now(), null, DictType.WORDNET));
 		}
 	}

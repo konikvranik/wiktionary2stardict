@@ -3,8 +3,6 @@ package net.suteren.stardict.wiktionary2stardict.stardict.io;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +18,11 @@ public class IdxFileWriter implements AutoCloseable {
 
 	@Getter List<SynonymumEntry> indexEntries = new ArrayList<>();
 	private final OutputStream outputStream;
+	private final int sizeInBits;
 	private final AtomicInteger currentOffset = new AtomicInteger(0);
 
-	public static List<SynonymumEntry> writeIdxFile(String baseName, List<IdxEntry> sortedIdx) throws Exception {
-		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream("%s.idx".formatted(baseName)))) {
+	public static List<SynonymumEntry> writeIdxFile(String baseName, List<IdxEntry> sortedIdx, int sizeInBits) throws Exception {
+		try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream("%s.idx".formatted(baseName)), sizeInBits)) {
 			for (IdxEntry entry : sortedIdx) {
 				idxFileWriter.writeEntry(entry);
 			}
@@ -33,13 +32,10 @@ public class IdxFileWriter implements AutoCloseable {
 
 	public void writeEntry(IdxEntry entry) throws IOException {
 		byte[] wordBytes = entry.word().getBytes(StandardCharsets.UTF_8);
-		ByteBuffer buffer = ByteBuffer.allocate(wordBytes.length + 1 + 8) // word + null terminator + 2x 32-bit int
-			.order(ByteOrder.BIG_ENDIAN);
-		buffer.put(wordBytes);        // UTF-8 encoded word
-		buffer.put((byte) 0);         // null terminator
-		buffer.putInt((int) entry.offset());        // offset in network byte order
-		buffer.putInt(entry.size());          // size in network byte order
-		outputStream.write(buffer.array());
+		outputStream.write(wordBytes);
+		outputStream.write(0);
+		outputStream.write(StardictIoUtil.toBytes(entry.offset(), sizeInBits, true));
+		outputStream.write(StardictIoUtil.toBytes(entry.size(), 32, true));
 		indexEntries.add(new SynonymumEntry(entry.word(), currentOffset.getAndAdd(1)));
 	}
 

@@ -9,7 +9,7 @@ import picocli.CommandLine;
 @Slf4j
 @RequiredArgsConstructor
 @CommandLine.Command(mixinStandardHelpOptions = true, subcommands = { ListKaikkiLangsCommand.class, ImportCommand.class, ExportCommand.class,
-	CatCommand.class }, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
+	CatCommand.class, ViewCommand.class }, description = "Wiktionary to Stardict converter CLI", versionProvider = Version.VersionProvider.class)
 @Component public class MainCommand implements Runnable {
 
 	@Override

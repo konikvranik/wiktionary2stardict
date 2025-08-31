@@ -39,7 +39,7 @@ import net.suteren.stardict.wiktionary2stardict.jpa.entity.WordDefinitionEntity;
 		  and e2.language = :toLang
 		  and e1.type = e2.type
 		  and e1.type != 'name'
-		  and e1.word = :word
+		  and lower(e1.word) like lower(concat('%', :word, '%'))
 		  and l1.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
 		  and l2.type = net.suteren.stardict.wiktionary2stardict.jpa.entity.LinkType.MEANING
 		  and l1.word = l2.word

@@ -13,16 +13,18 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.suteren.stardict.wiktionary2stardict.cli.MainCommand;
 import picocli.CommandLine;
 // ... existing code ...
 
+@Slf4j
 @SpringBootApplication public class Wiktionary2stardictApplication implements ApplicationRunner, ExitCodeGenerator {
 
 	private int exitCode = 0;
 
-	@Autowired private MainCommand mainCommand;
 	@Autowired private CommandLine.IFactory factory;
+	@Autowired private MainCommand mainCommand;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Wiktionary2stardictApplication.class, args);
@@ -51,7 +53,11 @@ import picocli.CommandLine;
 				.toArray(String[]::new);
 		}
 
-		exitCode = new CommandLine(mainCommand, factory).execute(cliArgs);
+		System.out.println("cliArgs = " + Arrays.toString(cliArgs));
+
+		exitCode = new CommandLine(mainCommand, factory)
+			.setPosixClusteredShortOptionsAllowed(false)
+			.execute(cliArgs);
 	}
 
 	@Override public int getExitCode() {

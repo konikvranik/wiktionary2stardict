@@ -48,14 +48,14 @@ public class StardictFileTest {
 
 			List<IdxEntry> idxEntries;
 			// Zapíšeme .dict soubor a získáme .idx záznamy
-			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename), DictFileWriter.Mode.ALL)) {
+			try (DictFileWriter dictFileWriter = new DictFileWriter(new FileOutputStream(dictFilename))) {
 				for (WordDefinition wordDef : testData) {
 					dictFileWriter.writeWordDefinition(wordDef);
 				}
 				idxEntries = dictFileWriter.getIdxEntries();
 			}
 
-			try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(idxFilename))) {
+			try (IdxFileWriter idxFileWriter = new IdxFileWriter(new FileOutputStream(idxFilename), Long.SIZE)) {
 				// Zapíšeme .idx soubor
 
 				for (IdxEntry entry : idxEntries) {
@@ -118,11 +118,15 @@ public class StardictFileTest {
 
 		List<DefinitionEntry> definitions1 = new ArrayList<>();
 		definitions1.add(
-			new DefinitionEntry(EntryType.MEANING, "A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			new DefinitionEntry(EntryType.MEANING, "A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.".getBytes(
+				java.nio.charset.StandardCharsets.UTF_8)));
 		definitions1.add(new DefinitionEntry(EntryType.PANGO,
-			"A <b>common</b>, round fruit produced by the tree <i>Malus domestica</i>, cultivated in temperate climates.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			"A <b>common</b>, round fruit produced by the tree <i>Malus domestica</i>, cultivated in temperate climates.".getBytes(
+				java.nio.charset.StandardCharsets.UTF_8)));
 		definitions1.add(
-			new DefinitionEntry(EntryType.HTML, "<div>A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			new DefinitionEntry(EntryType.HTML,
+				"<div>A common, round fruit produced by the tree Malus domestica, cultivated in temperate climates.</div>".getBytes(
+					java.nio.charset.StandardCharsets.UTF_8)));
 
 		word1.setDefinitions(definitions1);
 		data.add(word1);
@@ -133,11 +137,16 @@ public class StardictFileTest {
 
 		List<DefinitionEntry> definitions2 = new ArrayList<>();
 		definitions2.add(
-			new DefinitionEntry(EntryType.MEANING, "An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			new DefinitionEntry(EntryType.MEANING,
+				"An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(
+					java.nio.charset.StandardCharsets.UTF_8)));
 		definitions2.add(
-			new DefinitionEntry(EntryType.PANGO, "An <b>elongated curved</b> tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			new DefinitionEntry(EntryType.PANGO,
+				"An <b>elongated curved</b> tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.".getBytes(
+					java.nio.charset.StandardCharsets.UTF_8)));
 		definitions2.add(new DefinitionEntry(EntryType.HTML,
-			"<div>An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			"<div>An elongated curved tropical fruit that grows in bunches and has a creamy flesh and a smooth skin.</div>".getBytes(
+				java.nio.charset.StandardCharsets.UTF_8)));
 
 		word2.setDefinitions(definitions2);
 		data.add(word2);
@@ -147,9 +156,12 @@ public class StardictFileTest {
 		word3.setWord("orange");
 
 		List<DefinitionEntry> definitions3 = new ArrayList<>();
-		definitions3.add(new DefinitionEntry(EntryType.MEANING, "A round, reddish-yellow, acidic fruit of the citrus family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-		definitions3.add(new DefinitionEntry(EntryType.PANGO, "A <b>round</b>, reddish-yellow, acidic fruit of the <i>citrus</i> family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-		definitions3.add(new DefinitionEntry(EntryType.HTML, "<div>A round, reddish-yellow, acidic fruit of the citrus family.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		definitions3.add(new DefinitionEntry(EntryType.MEANING,
+			"A round, reddish-yellow, acidic fruit of the citrus family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		definitions3.add(new DefinitionEntry(EntryType.PANGO,
+			"A <b>round</b>, reddish-yellow, acidic fruit of the <i>citrus</i> family.".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		definitions3.add(new DefinitionEntry(EntryType.HTML,
+			"<div>A round, reddish-yellow, acidic fruit of the citrus family.</div>".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
 		word3.setDefinitions(definitions3);
 		data.add(word3);

@@ -80,18 +80,18 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
 		List<IdxEntry> sortedIdx;
 
-		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))),
-			DictFileWriter.Mode.ALL)) {
+		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
 
 			sortedIdx = dictFileWriter.writeDefinitionFile(allTranslations.stream()
 				.map(e -> constructWordDefinition(e, definitionFormats))
 				.filter(Objects::nonNull));
 		}
 		Collections.sort(sortedIdx);
-		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx);
+		int sizeInBits = Long.SIZE;
+		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx, sizeInBits);
 		Collections.sort(sortedSyn);
 		SynFileWriter.writeSynFile(baseName, sortedSyn);
-		IfoFileWriter.writeIfoFile(bookname, langCodeFrom, langCodeTo, sortedIdx, sortedSyn, baseName);
+		IfoFileWriter.writeIfoFile(bookname, langCodeFrom, langCodeTo, sortedIdx, sortedSyn, baseName, sizeInBits);
 	}
 
 	private WordDefinition constructWordDefinition(TranslationEntity e, Collection<Character> definitionFormats) {
