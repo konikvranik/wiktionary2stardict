@@ -80,14 +80,15 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		log.info("Found {} translations from {} to {}.", allTranslations.size(), langCodeFrom, langCodeTo);
 		List<IdxEntry> sortedIdx;
 
+		int sizeInBits;
 		try (DictFileWriter dictFileWriter = new DictFileWriter(new BufferedOutputStream(new FileOutputStream("%s.dict".formatted(baseName))))) {
 
 			sortedIdx = dictFileWriter.writeDefinitionFile(allTranslations.stream()
 				.map(e -> constructWordDefinition(e, definitionFormats))
 				.filter(Objects::nonNull));
+			sizeInBits = dictFileWriter.getSize() > 4L * 1024L * 1024L * 1024L ? Long.SIZE : Integer.SIZE;
 		}
 		Collections.sort(sortedIdx);
-		int sizeInBits = Long.SIZE;
 		List<SynonymumEntry> sortedSyn = IdxFileWriter.writeIdxFile(baseName, sortedIdx, sizeInBits);
 		Collections.sort(sortedSyn);
 		SynFileWriter.writeSynFile(baseName, sortedSyn);
@@ -133,9 +134,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 				if (StringUtils.isNotBlank(html)) {
 					wd.getDefinitions().add(new DefinitionEntry(EntryType.HTML, html.getBytes(StandardCharsets.UTF_8)));
 				}
-			} catch (Exception ignore) {
-				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-				log.debug(ignore.getMessage(), ignore);
+			} catch (Exception exception) {
+				logException(exception, wiktionaryEntry);
 			}
 		}
 
@@ -145,9 +145,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 				if (StringUtils.isNotBlank(xdxf)) {
 					wd.getDefinitions().add(new DefinitionEntry(EntryType.XDXF, xdxf.getBytes(StandardCharsets.UTF_8)));
 				}
-			} catch (Exception ignore) {
-				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-				log.debug(ignore.getMessage(), ignore);
+			} catch (Exception exception) {
+				logException(exception, wiktionaryEntry);
 			}
 		}
 
@@ -157,9 +156,8 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 				if (StringUtils.isNotBlank(pango)) {
 					wd.getDefinitions().add(new DefinitionEntry(EntryType.PANGO, pango.getBytes(StandardCharsets.UTF_8)));
 				}
-			} catch (Exception ignore) {
-				log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), ignore.getMessage());
-				log.debug(ignore.getMessage(), ignore);
+			} catch (Exception exception) {
+				logException(exception, wiktionaryEntry);
 			}
 		}
 
@@ -171,6 +169,11 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 			Optional.ofNullable(wiktionaryEntry.getLang_code()).orElse(wiktionaryEntry.getLang()));
 
 		return wd;
+	}
+
+	private static void logException(Exception exception, WiktionaryEntry wiktionaryEntry) {
+		log.warn("Failed to render entry {}: {}", wiktionaryEntry.getWord(), exception.getMessage());
+		log.debug(exception.getMessage(), exception);
 	}
 
 	private WiktionaryEntry parseWiktionaryEntry(TranslationEntity e) {

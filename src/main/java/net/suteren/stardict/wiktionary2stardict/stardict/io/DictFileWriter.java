@@ -27,6 +27,7 @@ public class DictFileWriter implements AutoCloseable {
 	@Getter private final List<IdxEntry> idxEntries = new ArrayList<>();
 	private final OutputStream outputStream;
 	private final AtomicLong currentOffset = new AtomicLong(0);
+	@Getter private long size;
 
 	public List<IdxEntry> writeDefinitionFile(Stream<WordDefinition> definitions) throws Exception {
 		// Nejprve seskupíme definice podle slova a sloučíme je do jednoho záznamu na slovo
@@ -36,9 +37,11 @@ public class DictFileWriter implements AutoCloseable {
 					Collectors.toSet()))));
 
 		// Zapišeme po jednom záznamu pro každé slovo
+		int s = 0;
 		for (Map.Entry<String, Set<DefinitionEntry>> entry : groupedDefinitionEntries.entrySet()) {
-			writeWordDefinition(new WordDefinition(entry.getKey(), entry.getValue()));
+			s = writeWordDefinition(new WordDefinition(entry.getKey(), entry.getValue()));
 		}
+		this.size = currentOffset.get() + s;
 		return getIdxEntries();
 	}
 
@@ -81,7 +84,4 @@ public class DictFileWriter implements AutoCloseable {
 		outputStream.close();
 	}
 
-	public enum Mode {
-		ALL, SPECIFIC, PANGO, XDXF, HTML
-	}
 }
