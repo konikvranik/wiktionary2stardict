@@ -7,13 +7,14 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
  * Reprezentuje definici slova ve StarDict slovníku.
  * Obsahuje seznam definičních záznamů různých typů.
  */
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data @Builder @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode
 public class WordDefinition implements Comparable<WordDefinition> {
 	private String word;
 	@Builder.Default
