@@ -103,9 +103,9 @@ import net.suteren.stardict.wiktionary2stardict.stardict.io.SynFileWriter;
 		WordDefinition wd = new WordDefinition();
 		wd.setWord(e.source().getWord());
 
-		wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord().getBytes(StandardCharsets.UTF_8)));
 		if (CollectionUtils.isEmpty(definitionFormats) || definitionFormats.contains('m')) {
 
+			wd.getDefinitions().add(new DefinitionEntry(EntryType.MEANING, e.definition().getWord().getBytes(StandardCharsets.UTF_8)));
 			Optional.of(wiktionaryEntry)
 				.map(WiktionaryEntry::getSenses)
 				.stream()
